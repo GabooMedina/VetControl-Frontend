@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import { Layout } from './components/layout/layout';
+import { Layout } from './components/layout/Layout';
 import SignIn from './auth/SignIn'
 import { ClientModule } from './components/modules/records/ClientModule'
 import { PetModule } from './components/modules/records/PetModule';
