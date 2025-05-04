@@ -1,0 +1,45 @@
+/* Estilos específicos para el componente SignIn */
+
+.signin-panel-left {
+    background-color: #1e3a8a; /* El color azul exacto que vemos en las imágenes */
+  }
+  
+  /* Color turquesa para el texto "Vet" - similar al que usas en tu CSS global */
+  .vetcontrol-logo .turquoise-text {
+    color: #40e0d0; /* Color turquesa similar al que estás usando */
+  }
+  
+  .vetcontrol-logo .orange-dots {
+    color: #ff9800; /* Color naranja para los puntos del logo */
+  }
+  
+  /* Estilos personalizados usando variables de tu global.css */
+  .input-signin {
+    background-color: hsl(var(--muted));
+    border-color: hsl(var(--border));
+    transition: all 0.2s;
+  }
+  
+  .input-signin:focus {
+    border-color: #40e0d0;
+    box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
+  }
+  
+  .btn-signin {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    transition: all 0.2s;
+  }
+  
+  .btn-signin:hover {
+    background-color: hsl(var(--muted));
+  }
+  
+  .forgot-password {
+    color: hsl(var(--muted-foreground));
+    transition: all 0.2s;
+  }
+  
+  .forgot-password:hover {
+    color: #40e0d0; /* Color turquesa al hacer hover */
+  }
