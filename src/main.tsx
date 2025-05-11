@@ -6,6 +6,7 @@ import SignIn from './auth/SignIn'
 import { ClientModule } from './components/modules/records/ClientModule'
 import { PetModule } from './components/modules/records/PetModule';
 import { HistoryModule } from './components/modules/records/HistoryModule';
+import { BillingModule } from './components/modules/billing/BillingModule';
 import './index.css'
 
 const router = createBrowserRouter([
@@ -29,8 +30,8 @@ const router = createBrowserRouter([
         path: 'consulta',
         children: [
           { path: 'clientes', element: <ClientModule /> },
-          { path: 'mascotas', element: <PetModule/> },
-          { path: 'historial', element: <HistoryModule/> },
+          { path: 'mascotas', element: <PetModule /> },
+          { path: 'historial', element: <HistoryModule /> },
         ]
       },
       {
@@ -50,7 +51,7 @@ const router = createBrowserRouter([
       {
         path: 'facturacion',
         children: [
-          { path: 'facturas', element: <div>PAGINA FACTURAS</div> },
+          { path: 'facturas', element: <BillingModule/>},
           { path: 'pagos', element: <div>PAGINA PAGOS</div> }
         ]
       },
