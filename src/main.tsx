@@ -8,7 +8,8 @@ import { PetModule } from './components/modules/records/PetModule';
 import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import './index.css'
-import InventoryPage from './components/modules/products/inventory';
+import InventoryPage from './components/modules/products/Inventory';
+//import InventoryPage from './components/modules/products/inventory';
 
 const router = createBrowserRouter([
   {
