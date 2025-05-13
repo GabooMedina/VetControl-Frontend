@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { CrudModal } from "../../shared/Modal";
-import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field } from "../../../Interfaces/TypesData";
 
-// Estructura del formulario
 const fields: Field[] = [
   { name: "name", label: "Nombre del producto", type: "text" },
   {
@@ -26,7 +24,6 @@ const fields: Field[] = [
   { name: "expiryDate", label: "Fecha de vencimiento", type: "date" },
 ];
 
-// Datos de ejemplo para el inventario
 const mockInventory = [
   {
     id: "1",
@@ -66,12 +63,12 @@ const mockInventory = [
   },
 ];
 
-export default function InventoryPage() {
-  const location = useLocation(); // Detecta cambios de ruta
+export default function MedicationsModule() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<typeof mockInventory>([]);
+  const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
-  // Cada vez que cambia la ruta, recargamos datos
   useEffect(() => {
     setData(mockInventory);
   }, [location.pathname]);
@@ -80,16 +77,7 @@ export default function InventoryPage() {
     const newItem = { ...item, id: (data.length + 1).toString() };
     setData([...data, newItem]);
     setOpen(false);
-  };
-
-  const handleEdit = (item: any) => {
-    const updated = data.map((d) => (d.id === item.id ? item : d));
-    setData(updated);
-  };
-
-  const handleDelete = (id: string) => {
-    const filtered = data.filter((d) => d.id !== id);
-    setData(filtered);
+    setSelectedRow(null);
   };
 
   const tableFields = fields.map((field) => ({
@@ -98,20 +86,30 @@ export default function InventoryPage() {
     render: (value: any) => value,
   }));
 
+  // Agregar columna con botón "+"
+  tableFields.push({
+    name: "action",
+    label: "",
+    render: () => (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-white bg-green-500 hover:bg-green-600 p-2 rounded-full"
+        title="Agregar"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+    ),
+  });
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Inventario</h2>
-        <PrimaryButton onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nuevo producto
-        </PrimaryButton>
-      </div>
+      <h2 className="text-xl font-bold mb-4">Medicamentos</h2>
 
       <DataTable
         fields={tableFields}
         initialData={data}
-        onEdit={handleEdit}
-        onDelete={(id) => handleDelete(id)}
+        onEdit={undefined}
+        onDelete={undefined}
         className="mt-1"
       />
 
@@ -120,7 +118,10 @@ export default function InventoryPage() {
         title="Agregar nuevo producto"
         fields={fields}
         onSubmit={handleAdd}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          setSelectedRow(null);
+        }}
       />
     </div>
   );
