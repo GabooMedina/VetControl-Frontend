@@ -14,7 +14,6 @@ const fields: Field[] = [
     label: "Categoría",
     type: "select",
     options: [
-      { value: "Medicamento", label: "Medicamento" },
       { value: "Vacuna", label: "Vacuna" },
       { value: "Material", label: "Material" },
       { value: "Accesorio", label: "Accesorio" },
@@ -26,12 +25,12 @@ const fields: Field[] = [
   { name: "expiryDate", label: "Fecha de vencimiento", type: "date" },
 ];
 
-// Datos de ejemplo para el inventario
+// Datos de ejemplo
 const mockInventory = [
   {
     id: "1",
-    name: "Amoxicilina 500mg",
-    category: "Medicamento",
+    name: "Vacuna",
+    category: "Vacuna",
     stock: 45,
     minStock: 10,
     price: 15.99,
@@ -66,43 +65,54 @@ const mockInventory = [
   },
 ];
 
-export default function InventoryPage() {
-  const location = useLocation(); // Detecta cambios de ruta
+export default function Inventory() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<typeof mockInventory>([]);
+  const [currentItem, setCurrentItem] = useState<any>(null);
 
-  // Cada vez que cambia la ruta, recargamos datos
   useEffect(() => {
     setData(mockInventory);
   }, [location.pathname]);
 
-  const handleAdd = (item: any) => {
-    const newItem = { ...item, id: (data.length + 1).toString() };
-    setData([...data, newItem]);
+  const handleAdd = () => {
+    setCurrentItem(null);
+    setOpen(true);
+  };
+
+  const handleSubmit = (item: any) => {
+    if (currentItem) {
+      const updated = data.map((d) => (d.id === currentItem.id ? { ...currentItem, ...item } : d));
+      setData(updated);
+    } else {
+      const newItem = { ...item, id: (data.length + 1).toString() };
+      setData([...data, newItem]);
+    }
     setOpen(false);
   };
 
   const handleEdit = (item: any) => {
-    const updated = data.map((d) => (d.id === item.id ? item : d));
-    setData(updated);
+    setCurrentItem(item);
+    setOpen(true);
   };
 
   const handleDelete = (id: string) => {
     const filtered = data.filter((d) => d.id !== id);
     setData(filtered);
+    setOpen(false);
   };
 
   const tableFields = fields.map((field) => ({
     name: field.name,
     label: field.label,
-    render: (value: any) => value,
+    render: (value: any) => value ?? "-",
   }));
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Inventario</h2>
-        <PrimaryButton onClick={() => setOpen(true)}>
+        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Inventario</h2>
+        <PrimaryButton onClick={handleAdd}>
           <Plus className="w-4 h-4 mr-2" /> Nuevo producto
         </PrimaryButton>
       </div>
@@ -117,10 +127,13 @@ export default function InventoryPage() {
 
       <CrudModal
         isOpen={open}
-        title="Agregar nuevo producto"
+        title={currentItem ? "Editar producto" : "Agregar nuevo producto"}
         fields={fields}
-        onSubmit={handleAdd}
+        initialData={currentItem || {}}
+        onSubmit={handleSubmit}
+        onDelete={currentItem ? () => handleDelete(currentItem.id) : undefined}
         onClose={() => setOpen(false)}
+        isEditing={!!currentItem}
       />
     </div>
   );

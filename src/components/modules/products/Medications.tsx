@@ -2,21 +2,18 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { CrudModal } from "../../shared/Modal";
+import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field } from "../../../Interfaces/TypesData";
 
+// Estructura del formulario
 const fields: Field[] = [
   { name: "name", label: "Nombre del producto", type: "text" },
-  {
-    name: "category",
-    label: "Categoría",
-    type: "select",
-    options: [
-      { value: "Medicamento", label: "Medicamento" },
-      { value: "Vacuna", label: "Vacuna" },
-      { value: "Material", label: "Material" },
-      { value: "Accesorio", label: "Accesorio" },
-    ],
+  { 
+    name: "category", 
+    label: "Categoría", 
+    type: "text", // Se cambia a 'text' ya que la categoría será fija
+    defaultValue: "Medicamento" // La categoría será Medicamento por defecto
   },
   { name: "stock", label: "Stock", type: "number" },
   { name: "minStock", label: "Stock mínimo", type: "number" },
@@ -24,6 +21,8 @@ const fields: Field[] = [
   { name: "expiryDate", label: "Fecha de vencimiento", type: "date" },
 ];
 
+
+// Datos de ejemplo
 const mockInventory = [
   {
     id: "1",
@@ -36,92 +35,112 @@ const mockInventory = [
   },
   {
     id: "2",
-    name: "Vacuna Antirrábica",
-    category: "Vacuna",
-    stock: 20,
-    minStock: 5,
-    price: 25.5,
-    expiryDate: "2023-12-15",
+    name: "Paracetamol 500mg",
+    category: "Medicamento",
+    stock: 100,
+    minStock: 20,
+    price: 8.49,
+    expiryDate: "2025-01-15",
   },
   {
     id: "3",
-    name: "Jeringa 5ml",
-    category: "Material",
-    stock: 100,
-    minStock: 30,
-    price: 0.75,
-    expiryDate: null,
+    name: "Ibuprofeno 200mg",
+    category: "Medicamento",
+    stock: 60,
+    minStock: 15,
+    price: 12.79,
+    expiryDate: "2024-09-20",
   },
   {
     id: "4",
-    name: "Collar Isabelino",
-    category: "Accesorio",
-    stock: 15,
-    minStock: 5,
-    price: 12.99,
-    expiryDate: null,
+    name: "Ciprofloxacino 500mg",
+    category: "Medicamento",
+    stock: 80,
+    minStock: 25,
+    price: 20.99,
+    expiryDate: "2025-03-10",
   },
+  {
+    id: "5",
+    name: "Doxiciclina 100mg",
+    category: "Medicamento",
+    stock: 120,
+    minStock: 30,
+    price: 18.49,
+    expiryDate: "2025-07-05",
+  }
 ];
 
-export default function MedicationsModule() {
+
+export default function Inventory() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<typeof mockInventory>([]);
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
+  const [currentItem, setCurrentItem] = useState<any>(null);
 
   useEffect(() => {
     setData(mockInventory);
   }, [location.pathname]);
 
-  const handleAdd = (item: any) => {
-    const newItem = { ...item, id: (data.length + 1).toString() };
-    setData([...data, newItem]);
+  const handleAdd = () => {
+    setCurrentItem(null);
+    setOpen(true);
+  };
+
+  const handleSubmit = (item: any) => {
+    if (currentItem) {
+      const updated = data.map((d) => (d.id === currentItem.id ? { ...currentItem, ...item } : d));
+      setData(updated);
+    } else {
+      const newItem = { ...item, id: (data.length + 1).toString() };
+      setData([...data, newItem]);
+    }
     setOpen(false);
-    setSelectedRow(null);
+  };
+
+  const handleEdit = (item: any) => {
+    setCurrentItem(item);
+    setOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    const filtered = data.filter((d) => d.id !== id);
+    setData(filtered);
+    setOpen(false);
   };
 
   const tableFields = fields.map((field) => ({
     name: field.name,
     label: field.label,
-    render: (value: any) => value,
+    render: (value: any) => value ?? "-",
   }));
-
-  // Agregar columna con botón "+"
-  tableFields.push({
-    name: "action",
-    label: "",
-    render: () => (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-white bg-green-500 hover:bg-green-600 p-2 rounded-full"
-        title="Agregar"
-      >
-        <Plus className="w-4 h-4" />
-      </button>
-    ),
-  });
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Medicamentos</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Medicamentos</h2>
+        <PrimaryButton onClick={handleAdd}>
+          <Plus className="w-4 h-4 mr-2" /> Nuevo medicamento
+        </PrimaryButton>
+      </div>
 
       <DataTable
         fields={tableFields}
         initialData={data}
-        onEdit={undefined}
-        onDelete={undefined}
+        onEdit={handleEdit}
+        onDelete={(id) => handleDelete(id)}
         className="mt-1"
       />
 
       <CrudModal
         isOpen={open}
-        title="Agregar nuevo producto"
+        title={currentItem ? "Editar Medicamneto" : "Agregar nuevo Medicamento"}
         fields={fields}
-        onSubmit={handleAdd}
-        onClose={() => {
-          setOpen(false);
-          setSelectedRow(null);
-        }}
+        initialData={currentItem || {}}
+        onSubmit={handleSubmit}
+        onDelete={currentItem ? () => handleDelete(currentItem.id) : undefined}
+        onClose={() => setOpen(false)}
+        isEditing={!!currentItem}
       />
     </div>
   );

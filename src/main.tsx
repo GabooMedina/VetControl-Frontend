@@ -8,8 +8,8 @@ import { PetModule } from './components/modules/records/PetModule';
 import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import './index.css'
-import InventoryPage from './components/modules/products/Inventory';
 import MedicationsModule from './components/modules/products/Medications';
+import InventoryModule from './components/modules/products/Inventory';
 //import InventoryPage from './components/modules/products/inventory';
 
 const router = createBrowserRouter([
@@ -47,7 +47,7 @@ const router = createBrowserRouter([
       {
         path: 'productos',
         children: [
-          { path: 'inventario', element: <InventoryPage/> },
+          { path: 'inventario', element: <InventoryModule/> },
           { path: 'medicamentos', element: <MedicationsModule/> }
         ]
       },
