@@ -7,7 +7,10 @@ import { ClientModule } from './components/modules/records/ClientModule'
 import { PetModule } from './components/modules/records/PetModule';
 import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
+import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
+
+
 
 const router = createBrowserRouter([
   {
@@ -37,8 +40,8 @@ const router = createBrowserRouter([
       {
         path: 'agenda',
         children: [
-          { path: 'calendario', element: <div>PAGINA CALENDARIO</div> },
-          { path: 'citas', element: <div>PAGINA CITAS</div> }
+          { path: 'calendario', element: <div>Calendario</div> },
+          { path: 'citas', element: <AppointmentModule/> }
         ]
       },
       {

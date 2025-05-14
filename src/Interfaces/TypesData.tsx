@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 
-export type FieldType = "text" | "email" | "password" | "number" | "date" | "select" | "textarea" | "tel";
+export type FieldType = "text" | "email" | "password" | "number" | "date" | "select" | "textarea" | "tel" |"time";
+
 
 // Para formularios (CrudModal)
 export interface Field {
