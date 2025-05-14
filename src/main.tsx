@@ -6,11 +6,7 @@ import SignIn from './auth/SignIn'
 import { ClientModule } from './components/modules/records/ClientModule'
 import { PetModule } from './components/modules/records/PetModule';
 import { HistoryModule } from './components/modules/records/HistoryModule';
-import { BillingModule } from './components/modules/billing/BillingModule';
 import './index.css'
-import InventoryPage from './components/modules/products/Inventory';
-import MedicationsModule from './components/modules/products/Medications';
-//import InventoryPage from './components/modules/products/inventory';
 
 const router = createBrowserRouter([
   {
@@ -33,8 +29,8 @@ const router = createBrowserRouter([
         path: 'consulta',
         children: [
           { path: 'clientes', element: <ClientModule /> },
-          { path: 'mascotas', element: <PetModule /> },
-          { path: 'historial', element: <HistoryModule /> },
+          { path: 'mascotas', element: <PetModule/> },
+          { path: 'historial', element: <HistoryModule/> },
         ]
       },
       {
@@ -47,14 +43,14 @@ const router = createBrowserRouter([
       {
         path: 'productos',
         children: [
-          { path: 'inventario', element: <InventoryPage/> },
-          { path: 'medicamentos', element: <MedicationsModule/> }
+          { path: 'inventario', element: <div>PAGINA INVENTARIOS</div> },
+          { path: 'medicamentos', element: <div>PAGINA MEDICAMENTOS</div> }
         ]
       },
       {
         path: 'facturacion',
         children: [
-          { path: 'facturas', element: <BillingModule/>},
+          { path: 'facturas', element: <div>PAGINA FACTURAS</div> },
           { path: 'pagos', element: <div>PAGINA PAGOS</div> }
         ]
       },
