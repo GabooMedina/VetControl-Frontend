@@ -57,18 +57,15 @@ export function AppointmentModule() {
       label: "Cliente",
       type: "select",
       required: true,
-      options: mockClients.map(c => ({ label: c.name, value: c.id }))
+      options: mockClients.map(c => ({ label: c.name, value: c.id })),
     },
     {
       name: "petId",
       label: "Mascota",
       type: "select",
       required: true,
-      options: selectedAppointment?.clientId
-        ? mockPets
-            .filter(p => p.clientId === selectedAppointment.clientId)
-            .map(p => ({ label: p.name, value: p.id }))
-        : []
+      // CORREGIDO: muestra siempre todas las mascotas
+      options: mockPets.map(p => ({ label: p.name, value: p.id })),
     },
     { name: "date", label: "Fecha", type: "date", required: true },
     { name: "time", label: "Hora", type: "time", required: true },
@@ -82,10 +79,15 @@ export function AppointmentModule() {
       options: [
         { label: "Pendiente", value: "Pendiente" },
         { label: "Confirmada", value: "Confirmada" },
-        { label: "Cancelada", value: "Cancelada" }
-      ]
+        { label: "Cancelada", value: "Cancelada" },
+      ],
     },
-    { name: "duration", label: "Duración (min)", type: "number", required: true },
+    {
+      name: "duration",
+      label: "Duración (min)",
+      type: "number",
+      required: true,
+    },
   ];
 
   const handleCreate = () => {
@@ -105,10 +107,12 @@ export function AppointmentModule() {
 
   const handleSubmit = (data: any) => {
     if (selectedAppointment) {
+      // Editar
       setAppointments(appointments.map(app =>
         app.id === selectedAppointment.id ? { ...app, ...data } : app
       ));
     } else {
+      // Crear
       const newAppointment = {
         id: String(appointments.length + 1),
         ...data
@@ -122,11 +126,11 @@ export function AppointmentModule() {
   const getPetName = (id: string) => mockPets.find(p => p.id === id)?.name || "";
 
   return (
-    <div className="px-4 pt-1 pb-4">
-      <div className="flex justify-between items-center mb-1">
-        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Gestión de Citas</h2>
-        <PrimaryButton icon={Plus} onClick={handleCreate}>
-          Nueva Cita
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Inventario</h2>
+        <PrimaryButton onClick={handleCreate}>
+          <Plus className="w-4 h-4 mr-2" /> Nuevo producto
         </PrimaryButton>
       </div>
 
@@ -137,12 +141,12 @@ export function AppointmentModule() {
           { name: "date", label: "Fecha" },
           { name: "time", label: "Hora" },
           { name: "reason", label: "Motivo" },
-          { name: "status", label: "Estado" }
+          { name: "status", label: "Estado" },
         ]}
         initialData={appointments.map(app => ({
           ...app,
           clientName: getClientName(app.clientId),
-          petName: getPetName(app.petId)
+          petName: getPetName(app.petId),
         }))}
         onEdit={handleEdit}
         onDelete={id => handleDelete(id)}

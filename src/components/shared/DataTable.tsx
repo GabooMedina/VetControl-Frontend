@@ -57,7 +57,6 @@ const DataTable: React.FC<DataTableProps> = ({
         onClear={() => setSearchTerm('')}
       />
 
-      {/* Tabla */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200 border-collapse">
           <thead>
@@ -101,8 +100,8 @@ const DataTable: React.FC<DataTableProps> = ({
                           <DeleteButton
                             onConfirm={() => {
                               if (onDelete) {
-                                onDelete(item[fields[0].name]);
-                                const updatedData = data.filter(d => d[fields[0].name] !== item[fields[0].name]);
+                                onDelete(item.id); // Cambia 'id' por el nombre de tu campo identificador si es distinto
+                                const updatedData = data.filter(d => d.id !== item.id);
                                 setData(updatedData);
                                 setFilteredData(updatedData);
                               }
@@ -135,7 +134,6 @@ const DataTable: React.FC<DataTableProps> = ({
         </table>
       </div>
 
-      {/* Paginación */}
       {filteredData.length > itemsPerPage && (
         <Paginator
           currentPage={currentPage}
