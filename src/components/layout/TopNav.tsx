@@ -1,5 +1,6 @@
-import { Heart, LogOut, PawPrint } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import logo from "../../assets/vetControl.svg";
 
 interface TopNavProps {
   onModuleChange?: (module: string) => void;
@@ -46,16 +47,8 @@ export function TopNav({ onModuleChange }: TopNavProps) {
     <header className="bg-white shadow-sm">
       <div className="px-4 py-3 flex items-center justify-between">
         {/* Logo y nombre */}
-        <div className="flex items-center ml-2">
-          <div className="relative w-12 h-12">
-            <div className="absolute top-0 left-0">
-              <PawPrint className="h-14 w-14 text-amber-600" />
-            </div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <Heart className="h-6 w-6 text-white" />
-            </div>
-          </div>
-          <h1 className="ml-2 text-2xl font-bold text-navy-800">VetControl</h1>
+        <div className="flex items-center">
+          <img src={logo} alt="Logo" className="h-8 w-auto mr-2" />
         </div>
 
         {/* Navegación */}
