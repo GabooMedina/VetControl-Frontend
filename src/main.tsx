@@ -9,13 +9,11 @@ import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
-<<<<<<< HEAD
 import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
 //import InventoryPage from './components/modules/products/inventory';
-=======
 import CalendarModule from './components/modules/schedule/CalendarModule';
->>>>>>> schedule
+
 
 
 
