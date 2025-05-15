@@ -13,6 +13,8 @@ import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
 import ReportsModule from './components/modules/reports/Reports';
 //import InventoryPage from './components/modules/products/inventory';
+import CalendarModule from './components/modules/schedule/CalendarModule';
+
 
 
 
@@ -44,7 +46,7 @@ const router = createBrowserRouter([
       {
         path: 'agenda',
         children: [
-          { path: 'calendario', element: <div>Calendario</div> },
+          { path: 'calendario', element: <CalendarModule/> },
           { path: 'citas', element: <AppointmentModule/> }
         ]
       },

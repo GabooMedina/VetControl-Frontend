@@ -128,9 +128,9 @@ export function AppointmentModule() {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Inventario</h2>
+        <h2 className="text-lg font-semibold text-gray-800 -mt-2">Gestión de Citas</h2>
         <PrimaryButton onClick={handleCreate}>
-          <Plus className="w-4 h-4 mr-2" /> Nuevo producto
+          <Plus className="w-4 h-4 mr-2" /> Nuevo cita veterinaria
         </PrimaryButton>
       </div>
 

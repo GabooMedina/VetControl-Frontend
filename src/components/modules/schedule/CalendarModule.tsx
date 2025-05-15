@@ -1,350 +1,336 @@
-/*
-import { useState, useMemo } from "react"
-import { CalendarIcon, ChevronLeft, ChevronRight, Clock, Plus, Search, Menu, X, CalendarPlus, Clock3 } from "lucide-react"
-import { Calendar, dateFnsLocalizer, Event, SlotInfo } from "react-big-calendar"
-import { format, parse, startOfWeek, getDay, addMinutes, addDays, startOfMonth, endOfMonth, isSameDay } from "date-fns"
-import { es } from "date-fns/locale"
-import { Input} from "../../shared/Input"
-import { PrimaryButton } from "../../shared/PrimaryButton"
-import { CrudModal } from "../../shared/Modal"
-import { Field } from "../../../Interfaces/TypesData"
-import { cn } from "../../shared/cn"
-import "react-big-calendar/lib/css/react-big-calendar.css"
-
-// Tipos de datos
-type Client = {
-  id: string
-  name: string
-}
-
-type Pet = {
-  id: string
-  name: string
-  species: string
-  clientId: string
-}
-
-type AppointmentStatus = "Pendiente" | "Confirmada" | "Completada" | "Cancelada"
-
-type Appointment = {
-  id: string
-  clientId: string
-  petId: string
-  date: string
-  time: string
-  reason: string
-  notes: string
-  status: AppointmentStatus
-  duration: number
-}
-
-type CalendarEvent = Event & {
-  id: string
-  status: AppointmentStatus
-  resource: Appointment
-}
-
-// Configuración del calendario
-const locales = { es }
-const localizer = dateFnsLocalizer({
+import React, { useState } from "react";
+import {
   format,
-  parse,
+  addDays,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
   startOfWeek,
-  getDay,
-  locales,
-})
+  endOfWeek,
+  isSameMonth,
+  isSameDay,
+  parse,
+} from "date-fns";
 
-// Datos de ejemplo
-const mockClients: Client[] = [
-  { id: "1", name: "Juan Pérez" },
-  { id: "2", name: "María González" },
-  { id: "3", name: "Carlos Rodríguez" },
-  { id: "4", name: "Ana Martínez" },
-  { id: "5", name: "Luis Sánchez" },
-]
+interface Cita {
+  id: number;
+  nombre: string;
+  fecha: string;
+  hora: string;
+}
 
-const mockPets: Pet[] = [
-  { id: "1", name: "Max", species: "Perro", clientId: "1" },
-  { id: "2", name: "Luna", species: "Gato", clientId: "2" },
-  { id: "3", name: "Rocky", species: "Perro", clientId: "3" },
-  { id: "4", name: "Coco", species: "Ave", clientId: "4" },
-  { id: "5", name: "Nala", species: "Gato", clientId: "5" },
-]
+const CalendarModule: React.FC = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-const today = new Date()
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    clientId: "1",
-    petId: "1",
-    date: format(today, "yyyy-MM-dd"),
-    time: "09:00",
-    reason: "Vacunación anual",
-    notes: "Primera dosis",
-    status: "Confirmada",
-    duration: 30,
-  },
-  // ... otros appointments
-]
+  const [citas, setCitas] = useState<Cita[]>([
+    {
+      id: 1,
+      nombre: "Consulta médica",
+      fecha: format(new Date(), "yyyy-MM-dd"),
+      hora: "10:00",
+    },
+    {
+      id: 2,
+      nombre: "Reunión de proyecto",
+      fecha: format(addDays(new Date(), 2), "yyyy-MM-dd"),
+      hora: "14:30",
+    },
+    {
+      id: 3,
+      nombre: "Corte de cabello",
+      fecha: format(addDays(new Date(), 5), "yyyy-MM-dd"),
+      hora: "09:00",
+    },
+    {
+      id: 4,
+      nombre: "Control dental",
+      fecha: format(subMonths(new Date(), 1), "yyyy-MM-dd"),
+      hora: "16:00",
+    },
+  ]);
 
-// Campos del formulario
-const appointmentFields: Field[] = [
-  {
-    name: "clientId",
-    label: "Cliente",
-    type: "select",
-    required: true,
-    options: mockClients.map(c => ({ label: c.name, value: c.id }))
-  },
-  {
-    name: "petId",
-    label: "Mascota",
-    type: "select",
-    required: true,
-    options: [], // Se llena dinámicamente
-    //dependency: "clientId"
-  },
-  { name: "date", label: "Fecha", type: "date", required: true },
-  { name: "time", label: "Hora", type: "time", required: true },
-  { name: "reason", label: "Motivo", type: "text", required: true },
-  { name: "notes", label: "Notas", type: "textarea", required: false },
-  {
-    name: "status",
-    label: "Estado",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Pendiente", value: "Pendiente" },
-      { label: "Confirmada", value: "Confirmada" },
-      { label: "Completada", value: "Completada" },
-      { label: "Cancelada", value: "Cancelada" }
-    ]
-  },
-  {
-    name: "duration",
-    label: "Duración (min)",
-    type: "select",
-    required: true,
-    options: [
-      { label: "15 minutos", value: "15" },
-      { label: "30 minutos", value: "30" },
-      { label: "45 minutos", value: "45" },
-      { label: "60 minutos", value: "60" },
-      { label: "90 minutos", value: "90" },
-      { label: "120 minutos", value: "120" }
-    ]
-  }
-]
+  const [modalOpen, setModalOpen] = useState(false);
+  const [nuevaCita, setNuevaCita] = useState<Cita>({
+    id: 0,
+    nombre: "",
+    fecha: "",
+    hora: "",
+  });
+  const [busqueda, setBusqueda] = useState("");
 
-export default function CalendarModule() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [calendarView, setCalendarView] = useState<CalendarView>("month")
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [searchQuery, setSearchQuery] = useState("")
-  const [miniCalendarDate, setMiniCalendarDate] = useState(new Date())
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const today = () => setCurrentDate(new Date());
 
-  // Convertir citas a eventos del calendario
-  const events = useMemo(() => {
-    return mockAppointments.map(appointment => {
-      const startDate = new Date(`${appointment.date}T${appointment.time}`)
-      const endDate = addMinutes(startDate, appointment.duration)
-      const client = mockClients.find(c => c.id === appointment.clientId)
-      const pet = mockPets.find(p => p.id === appointment.petId)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNuevaCita({
+      ...nuevaCita,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-      return {
-        id: appointment.id,
-        title: `${client?.name || 'Cliente'} - ${pet?.name || 'Mascota'} (${appointment.reason})`,
-        start: startDate,
-        end: endDate,
-        status: appointment.status,
-        resource: appointment
-      }
-    })
-  }, [])
+  const agregarCita = () => {
+    if (!nuevaCita.nombre || !nuevaCita.fecha || !nuevaCita.hora) {
+      alert("Por favor, completa todos los campos");
+      return;
+    }
+    const nueva = {
+      ...nuevaCita,
+      id: citas.length + 1,
+    };
+    setCitas([...citas, nueva]);
+    setModalOpen(false);
+    setNuevaCita({ id: 0, nombre: "", fecha: "", hora: "" });
+  };
 
-  // Filtrar eventos basados en búsqueda
-  const filteredEvents = useMemo(() => {
-    if (!searchQuery.trim()) return events
-    const query = searchQuery.toLowerCase()
-    return events.filter(event => 
-      event.title.toLowerCase().includes(query) || 
-      event.resource.notes?.toLowerCase().includes(query)
-    )
-  }, [events, searchQuery])
+  const citasHoy = citas.filter(
+    (c) => format(new Date(c.fecha), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+  );
 
-  // Manejar selección de cita
-  const handleEventSelect = (event: CalendarEvent) => {
-    setSelectedAppointment(event.resource)
-    setIsModalOpen(true)
-  }
+  const citasProximas = citas.filter(
+    (c) =>
+      format(new Date(c.fecha), "yyyy-MM-dd") > format(new Date(), "yyyy-MM-dd")
+  );
 
-  // Manejar selección de slot en calendario
-  const handleCalendarSelect = ({ start }: SlotInfo) => {
-    setSelectedAppointment({
-      id: '',
-      clientId: '',
-      petId: '',
-      date: format(start, 'yyyy-MM-dd'),
-      time: format(start, 'HH:mm'),
-      reason: '',
-      notes: '',
-      status: 'Pendiente',
-      duration: 30
-    })
-    setIsModalOpen(true)
-  }
+  const citasFiltradas = citas.filter((c) =>
+    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  );
 
-  // Obtener mascotas por cliente
-  const getPetsByClient = (clientId: string) => {
-    return mockPets
-      .filter(pet => pet.clientId === clientId)
-      .map(pet => ({ label: `${pet.name} (${pet.species})`, value: pet.id }))
-  }
+  const renderHeader = () => (
+    <div className="flex justify-between items-center mb-4">
+      <button
+        onClick={prevMonth}
+        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+        aria-label="Mes anterior"
+      >
+        ←
+      </button>
+      <h2 className="text-xl font-bold text-gray-700">
+        {format(currentDate, "MMMM yyyy")}
+      </h2>
+      <button
+        onClick={nextMonth}
+        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+        aria-label="Mes siguiente"
+      >
+        →
+      </button>
+    </div>
+  );
 
-  // Manejar envío del formulario
-  const handleSubmit = (data: any) => {
-    console.log("Appointment data:", data)
-    setIsModalOpen(false)
-  }
+  const renderDays = () => {
+    const dateFormat = "eee";
+    const startDate = startOfWeek(currentDate, { weekStartsOn: 0 });
 
-  // Componente de toolbar personalizado
-  const CustomToolbar = (toolbar: any) => {
     return (
-      <div className="flex justify-between items-center mb-2 px-4 py-2 bg-white border-b">
-        <div className="flex items-center space-x-2">
-          <PrimaryButton variant="outline" size="sm" onClick={() => toolbar.onNavigate("PREV")}>
-            <ChevronLeft className="h-4 w-4" />
-          </PrimaryButton>
-          <PrimaryButton variant="outline" size="sm" onClick={() => toolbar.onNavigate("TODAY")}>
-            Hoy
-          </PrimaryButton>
-          <PrimaryButton variant="outline" size="sm" onClick={() => toolbar.onNavigate("NEXT")}>
-            <ChevronRight className="h-4 w-4" />
-          </PrimaryButton>
-          <span className="text-lg font-semibold ml-2">
-            {format(toolbar.date, "MMMM yyyy", { locale: es })}
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          {["month", "week", "day", "agenda"].map(view => (
-            <PrimaryButton
-              key={view}
-              variant={calendarView === view ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setCalendarView(view as CalendarView)
-                toolbar.onView(view)
-              }}
-              className={calendarView === view ? "bg-turquoise-600 hover:bg-turquoise-700" : ""}
-            >
-              {view === "month" ? "Mes" : view === "week" ? "Semana" : view === "day" ? "Día" : "Agenda"}
-            </PrimaryButton>
-          ))}
-        </div>
+      <div className="grid grid-cols-7 text-center font-semibold border-b border-gray-300 pb-2 mb-2 text-gray-600 uppercase text-xs select-none">
+        {[...Array(7)].map((_, i) => (
+          <div key={i}>{format(addDays(startDate, i), dateFormat)}</div>
+        ))}
       </div>
-    )
-  }
+    );
+  };
+
+  const renderCells = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    const rows = [];
+    let days = [];
+    let day = startDate;
+
+    while (day <= endDate) {
+      for (let i = 0; i < 7; i++) {
+        const cloneDay = day;
+        const citasDelDia = citas.filter((c) =>
+          isSameDay(parse(c.fecha, "yyyy-MM-dd", new Date()), cloneDay)
+        );
+
+        const isToday = isSameDay(day, new Date());
+
+        days.push(
+          <div
+            className={`p-2 border border-gray-300 h-28 flex flex-col justify-start items-start overflow-hidden cursor-default ${
+              !isSameMonth(day, monthStart) ? "text-gray-300" : "text-gray-800"
+            } ${isToday ? "bg-green-100 font-semibold" : ""} rounded-md hover:bg-green-50 transition relative`}
+            key={day.toString()}
+            title={format(day, "PPPP")}
+          >
+            <div className="flex justify-between w-full items-center mb-1">
+              <span className="font-semibold">{format(day, "d")}</span>
+              {isToday && (
+                <span className="text-xs bg-green-500 text-white px-1 rounded select-none">
+                  Hoy
+                </span>
+              )}
+            </div>
+
+            <ul className="text-xs overflow-y-auto max-h-20 w-full">
+              {citasDelDia.length > 0 ? (
+                citasDelDia.map((cita) => (
+                  <li
+                    key={cita.id}
+                    className="mb-0.5 truncate"
+                    title={`${cita.nombre} - ${cita.hora}`}
+                  >
+                    • {cita.nombre} <span className="text-gray-500">({cita.hora})</span>
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-300 italic select-none">Sin citas</li>
+              )}
+            </ul>
+          </div>
+        );
+        day = addDays(day, 1);
+      }
+      rows.push(
+        <div className="grid grid-cols-7 gap-1 mb-1" key={day.toString()}>
+          {days}
+        </div>
+      );
+      days = [];
+    }
+
+    return <div>{rows}</div>;
+  };
 
   return (
-    <div className="flex h-full">
-      {}
-      <div className={cn(
-        "bg-gray-50 border-r transition-all duration-300 overflow-hidden",
-        isSidebarOpen ? "w-64" : "w-0"
-      )}>
-        {}
+    <div className="p-6 max-w-6xl mx-auto font-sans">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Gestión de Citas</h2>
+
+      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <input
+          type="text"
+          placeholder="Buscar cita por nombre..."
+          className="border border-gray-300 p-2 rounded shadow-sm w-full sm:w-1/2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          aria-label="Buscar citas"
+        />
+        <button
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow-md transition font-semibold"
+          onClick={() => setModalOpen(true)}
+          aria-label="Agregar nueva cita"
+        >
+          Nueva Cita
+        </button>
       </div>
 
-      {}
-      <div className="flex-1 flex flex-col">
-        <div className="p-3 border-b flex justify-between items-center bg-white">
-          <div className="flex items-center">
-            {!isSidebarOpen && (
-              <PrimaryButton variant="ghost" size="sm" className="mr-2" onClick={() => setIsSidebarOpen(true)}>
-                <Menu className="h-5 w-5" />
-              </PrimaryButton>
-            )}
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar citas..."
-                className="pl-8 h-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+      {/* Citas de Hoy */}
+      <section className="mb-8">
+        <h3 className="text-xl font-semibold text-gray-700 mb-3">Citas de Hoy</h3>
+        {citasHoy.length > 0 ? (
+          <ul className="list-disc list-inside text-gray-700 space-y-1">
+            {citasHoy.map((c) => (
+              <li key={c.id} className="hover:underline cursor-default">
+                {c.nombre} - <span className="font-mono">{c.hora}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 italic">No hay citas hoy.</p>
+        )}
+      </section>
+
+      {/* Citas Próximas */}
+      <section className="mb-10">
+        <h3 className="text-xl font-semibold text-gray-700 mb-3">Citas Próximas</h3>
+        {citasProximas.length > 0 ? (
+          <ul className="list-disc list-inside text-gray-700 space-y-1">
+            {citasProximas.map((c) => (
+              <li key={c.id} className="hover:underline cursor-default">
+                {c.nombre} - <span className="font-mono">{c.fecha}</span> -{" "}
+                <span className="font-mono">{c.hora}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 italic">No hay citas próximas.</p>
+        )}
+      </section>
+
+      {/* Calendario */}
+      <section className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+        {renderHeader()}
+        {renderDays()}
+        {renderCells()}
+      </section>
+
+      {/* Modal para agregar cita */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-lg relative">
+            <h3
+              id="modal-title"
+              className="text-lg font-bold mb-4 text-gray-700 text-center"
+            >
+              Agregar Nueva Cita
+            </h3>
+
+            <label className="block mb-3">
+              <span className="text-gray-700 font-semibold mb-1 block">Nombre</span>
+              <input
+                type="text"
+                name="nombre"
+                value={nuevaCita.nombre}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Ejemplo: Consulta médica"
+                autoFocus
               />
+            </label>
+
+            <label className="block mb-3">
+              <span className="text-gray-700 font-semibold mb-1 block">Fecha</span>
+              <input
+                type="date"
+                name="fecha"
+                value={nuevaCita.fecha}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                min={format(new Date(), "yyyy-MM-dd")}
+              />
+            </label>
+
+            <label className="block mb-5">
+              <span className="text-gray-700 font-semibold mb-1 block">Hora</span>
+              <input
+                type="time"
+                name="hora"
+                value={nuevaCita.hora}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+            </label>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={agregarCita}
+                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition"
+              >
+                Agregar
+              </button>
             </div>
           </div>
-          <PrimaryButton onClick={() => setIsModalOpen(true)} className="bg-turquoise-600 hover:bg-turquoise-700 text-white">
-            <Plus className="mr-2 h-4 w-4" /> Nueva Cita
-          </PrimaryButton>
         </div>
-
-        {}
-        <div className="flex-1 overflow-auto">
-          <Calendar
-            localizer={localizer}
-            events={filteredEvents}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: "calc(100vh - 180px)" }}
-            views={["month", "week", "day", "agenda"]}
-            defaultView="month"
-            view={calendarView}
-            onView={setCalendarView}
-            date={currentDate}
-            onNavigate={setCurrentDate}
-            selectable
-            onSelectSlot={handleCalendarSelect}
-            onSelectEvent={handleEventSelect}
-            components={{
-              toolbar: CustomToolbar,
-              event: ({ event }) => (
-                <div className={cn(
-                  "rounded px-2 py-1 text-xs border-l-4 overflow-hidden hover:bg-opacity-80 transition-colors mb-1 shadow-sm",
-                  event.status === "Confirmada" ? "bg-green-100 border-green-500" :
-                  event.status === "Pendiente" ? "bg-yellow-100 border-yellow-500" :
-                  event.status === "Completada" ? "bg-blue-100 border-blue-500" :
-                  "bg-red-100 border-red-500"
-                )}>
-                  {event.title}
-                </div>
-              )
-            }}
-            messages={{
-              today: "Hoy",
-              previous: "Anterior",
-              next: "Siguiente",
-              month: "Mes",
-              week: "Semana",
-              day: "Día",
-              agenda: "Agenda"
-            }}
-          />
-        </div>
-      </div>
-
-      {}
-      <div className="w-64 bg-gray-50 border-l overflow-y-auto">
-        {}
-      </div>
-
-      {}
-      <CrudModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedAppointment ? "Editar Cita" : "Nueva Cita"}
-        fields={appointmentFields}
-        initialData={selectedAppointment || {}}
-        onSubmit={handleSubmit}
-        getDynamicOptions={(fieldName, formData) => {
-          if (fieldName === "petId" && formData.clientId) {
-            return getPetsByClient(formData.clientId)
-          }
-          return []
-        }}
-      />
+      )}
     </div>
-  )
-}*/
+  );
+};
+
+export default CalendarModule;
