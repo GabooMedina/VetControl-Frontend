@@ -11,6 +11,7 @@ import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
 import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
+import ReportsModule from './components/modules/reports/Reports';
 //import InventoryPage from './components/modules/products/inventory';
 
 
@@ -64,7 +65,7 @@ const router = createBrowserRouter([
       {
         path: 'informes',
         children: [
-          { path: 'estadisticas', element: <div>PAGINA ESTADISTICAS</div> },
+          { path: 'estadisticas', element: <ReportsModule/> },
           { path: 'reportes', element: <div>PAGINA REPORTES</div> }
         ]
       }
