@@ -9,6 +9,7 @@ import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
+import CalendarModule from './components/modules/schedule/CalendarModule';
 
 
 
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
       {
         path: 'agenda',
         children: [
-          { path: 'calendario', element: <div>Calendario</div> },
+          { path: 'calendario', element: <CalendarModule/> },
           { path: 'citas', element: <AppointmentModule/> }
         ]
       },
