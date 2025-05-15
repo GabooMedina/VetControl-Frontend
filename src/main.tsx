@@ -9,6 +9,9 @@ import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
+import MedicationsModule from './components/modules/products/Medications';
+import InventoryModule from './components/modules/products/Inventory';
+//import InventoryPage from './components/modules/products/inventory';
 
 
 
@@ -47,8 +50,8 @@ const router = createBrowserRouter([
       {
         path: 'productos',
         children: [
-          { path: 'inventario', element: <div>PAGINA INVENTARIOS</div> },
-          { path: 'medicamentos', element: <div>PAGINA MEDICAMENTOS</div> }
+          { path: 'inventario', element: <InventoryModule/> },
+          { path: 'medicamentos', element: <MedicationsModule/> }
         ]
       },
       {
