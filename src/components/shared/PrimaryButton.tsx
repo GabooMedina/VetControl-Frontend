@@ -33,10 +33,10 @@ export function PrimaryButton({
         // Estilos base
         "inline-flex items-center justify-center rounded-md font-medium",
         "transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        "focus-visible:ring-[#00B2B2] disabled:pointer-events-none disabled:opacity-50 shadow-sm",
+        "focus-visible:ring-[#005456] disabled:pointer-events-none disabled:opacity-50 shadow-sm",
         
         // Variantes
-        variant === "default" && "bg-[#00B2B2] text-white hover:bg-[#009999]",
+        variant === "default" && "bg-[#005456] text-white hover:bg-[#003e40]",
         variant === "outline" && "border border-gray-300 bg-transparent text-gray-800 hover:bg-gray-50",
         variant === "ghost" && "bg-transparent hover:bg-gray-100 text-gray-800",
         variant === "destructive" && "bg-red-600 text-white hover:bg-red-700",

@@ -59,8 +59,8 @@ export function TopNav({ onModuleChange }: TopNavProps) {
               onClick={() => handleNavigation(module.id, module.path)}
               className={`px-2 py-1 font-medium relative transition-colors ${
                 activeModule === module.id 
-                  ? "text-[#00B2B2] font-semibold border-b-2 border-[#00B2B2]"
-                  : "text-gray-600 hover:text-[#00B2B2]"
+                  ? "text-[#005456] font-semibold border-b-2 border-[#005456]"
+                  : "text-gray-600 hover:text-[#005456]"
               }`}
             >
               {module.name}

@@ -73,7 +73,7 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
   const { title, items } = getSidebarConfig()
 
   return (
-    <aside className="w-full md:w-64 bg-[#00B2B2] text-white p-6 flex-shrink-0">
+    <aside className="w-full md:w-64 bg-[#005456] text-white p-6 flex-shrink-0">
       <h3 className="text-2xl font-bold mb-6 pb-2">{title}</h3>
       <nav className="space-y-2">
         {items.map((item) => (
@@ -83,7 +83,7 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
           className={`
             flex items-center px-4 py-3 rounded-lg text-lg font-medium
             ${activeItem === item.name 
-              ? 'bg-[#009999] font-semibold' 
+              ? 'bg-[#003e40] font-semibold' 
               : 'hover:bg-[#008888]'
             }
             transition-colors duration-200
