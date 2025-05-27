@@ -3,21 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
 import { login } from './services/authService';
+import { showToast } from '../components/shared/Toast';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError('Por Favor, Complete Todos los Campos');
+      showToast.error('Por favor, complete todos los campos');
       return;
     }
     try {
       // Aquí irá la lógica de autenticación del backend
+      // console.log('Iniciando sesión con:', { email, password });
+      showToast.success('Inicio de sesión exitoso');
+      navigate('/dashboard');
+    } catch {
+      showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
       const response = await login(email, password);
       if (response) {
         localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
@@ -28,6 +35,10 @@ const SignIn = () => {
       setError('Error al iniciar sesión. Verifique sus credenciales.');
     }
   }, [email, password, navigate]);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
 
   return (
@@ -59,38 +70,45 @@ const SignIn = () => {
         {/* Panel derecho con formulario */}
         <div className="w-full md:w-1/2 flex items-center justify-center bg-white">
           <div className="w-full max-w-md p-4 sm:p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8 text-center">BIENVENIDO</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center text-blue-900">BIENVENIDO</h2>
             <form onSubmit={handleSubmit} autoComplete="on" aria-label="Formulario de inicio de sesión">
               <div className="mb-4">
                 <input
                   type="text"
                   placeholder="Ingresa tu email"
+                  placeholder="Correo Electrónico"
                   className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   autoComplete="email"
                   aria-label="Email"
                   required
+                  autoComplete="username"
+                  aria-label="Usuario"
                 />
               </div>
-              <div className="mb-2">
+              <div className="mb-2 relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Contraseña"
-                  className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
+                  className="w-full p-3 bg-gray-200 rounded text-base md:text-lg pr-10"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   autoComplete="current-password"
                   aria-label="Contraseña"
-                  required
                 />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-blue-900 focus:outline-none"
+                  onClick={togglePasswordVisibility}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
               </div>
-              {error && (
-                <div className="mb-2 text-red-600 text-sm" role="alert">{error}</div>
-              )}
               <div className="text-right mb-6">
                 <button type="button" className="text-sm text-gray-600 hover:text-blue-900">
-                  Olvidaste tu contraseña
+                  Registrate
                 </button>
               </div>
               <button

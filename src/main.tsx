@@ -12,14 +12,15 @@ import './index.css'
 import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
 import ReportsModule from './components/modules/reports/Reports';
-//import InventoryPage from './components/modules/products/inventory';
 import CalendarModule from './components/modules/schedule/CalendarModule';
+import { ToastProvider } from './components/shared/Toast';
 import SignUp from './auth/SignUp';
 
 
 
 
 const router = createBrowserRouter([
+  
   {
     path: '/',
     element: <Navigate to="/signin" replace />
@@ -82,6 +83,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ToastProvider />
     <RouterProvider router={router} />
   </StrictMode>
 )

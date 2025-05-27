@@ -3,3 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fuentes personalizadas */
+@layer base {
+  body {
+    font-family: 'Roboto', sans-serif;
+  }
+}

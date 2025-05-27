@@ -26,8 +26,7 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
           items: [
             { name: 'clientes', label: 'Clientes', icon: <User className="mr-3 h-5 w-5" /> },
             { name: 'mascotas', label: 'Mascotas', icon: <PawPrint className="mr-3 h-5 w-5" /> },
-            { name: 'historial', label: 'Historial', icon: <ClipboardList className="mr-3 h-5 w-5" /> },
-            { name: 'buscar', label: 'Buscar', icon: <Search className="mr-3 h-5 w-5" /> }
+            { name: 'historial', label: 'Historial', icon: <ClipboardList className="mr-3 h-5 w-5" /> }
           ]
         }
       case 'agenda':

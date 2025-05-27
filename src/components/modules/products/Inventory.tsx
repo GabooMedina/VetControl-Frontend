@@ -63,6 +63,24 @@ const mockInventory = [
     price: 12.99,
     expiryDate: null,
   },
+  {
+    id: "4",
+    name: "Collar Isabelino",
+    category: "Accesorio",
+    stock: 15,
+    minStock: 5,
+    price: 12.99,
+    expiryDate: null,
+  },
+  {
+    id: "4",
+    name: "Collar Isabelino",
+    category: "Accesorio",
+    stock: 15,
+    minStock: 5,
+    price: 12.99,
+    expiryDate: null,
+  },
 ];
 
 export default function Inventory() {
