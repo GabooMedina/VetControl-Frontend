@@ -21,15 +21,16 @@ const SignIn = () => {
     try {
       // Aquí irá la lógica de autenticación del backend
       // console.log('Iniciando sesión con:', { email, password });
-      showToast.success('Inicio de sesión exitoso');
-      navigate('/dashboard');
-    } catch {
-      showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
       const response = await login(email, password);
       if (response) {
+        console.log('Inicio de sesión exitoso:', response);
         localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        showToast.success('Inicio de sesión exitoso');
         navigate('/dashboard');
       }
+    } catch {
+      showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
+      
     }
   }, [email, password, navigate]);
 
