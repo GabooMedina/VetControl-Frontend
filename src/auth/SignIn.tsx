@@ -30,9 +30,6 @@ const SignIn = () => {
         localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
         navigate('/dashboard');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('Error al iniciar sesión. Verifique sus credenciales.');
     }
   }, [email, password, navigate]);
 
@@ -76,15 +73,12 @@ const SignIn = () => {
                 <input
                   type="text"
                   placeholder="Ingresa tu email"
-                  placeholder="Correo Electrónico"
                   className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   autoComplete="email"
                   aria-label="Email"
                   required
-                  autoComplete="username"
-                  aria-label="Usuario"
                 />
               </div>
               <div className="mb-2 relative">
