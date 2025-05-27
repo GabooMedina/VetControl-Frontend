@@ -14,7 +14,7 @@ import InventoryModule from './components/modules/products/Inventory';
 import ReportsModule from './components/modules/reports/Reports';
 import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
-
+import SignUp from './auth/SignUp';
 
 const router = createBrowserRouter([
   
@@ -25,6 +25,10 @@ const router = createBrowserRouter([
   {
     path: '/signin',
     element: <SignIn />
+  },
+  {
+    path: '/register',
+    element: <SignUp />
   },
   {
     path: '/dashboard',
