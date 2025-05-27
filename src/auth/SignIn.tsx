@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
+import { login } from './services/authService';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -17,12 +18,17 @@ const SignIn = () => {
     }
     try {
       // Aquí irá la lógica de autenticación del backend
-      // console.log('Iniciando sesión con:', { email, password });
-      navigate('/dashboard');
-    } catch {
+      const response = await login(email, password);
+      if (response) {
+        localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       setError('Error al iniciar sesión. Verifique sus credenciales.');
     }
   }, [email, password, navigate]);
+
 
   return (
     <>
@@ -58,12 +64,12 @@ const SignIn = () => {
               <div className="mb-4">
                 <input
                   type="text"
-                  placeholder="Usuario"
+                  placeholder="Ingresa tu email"
                   className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  autoComplete="username"
-                  aria-label="Usuario"
+                  autoComplete="email"
+                  aria-label="Email"
                   required
                 />
               </div>
@@ -93,7 +99,16 @@ const SignIn = () => {
               >
                 Ingresar
               </button>
+
             </form>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                ¿No tienes una cuenta?{' '}
+                <a href="/register" className="text-blue-900 hover:underline">
+                  Regístrate aquí
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>

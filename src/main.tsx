@@ -14,6 +14,7 @@ import InventoryModule from './components/modules/products/Inventory';
 import ReportsModule from './components/modules/reports/Reports';
 //import InventoryPage from './components/modules/products/inventory';
 import CalendarModule from './components/modules/schedule/CalendarModule';
+import SignUp from './auth/SignUp';
 
 
 
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
   {
     path: '/signin',
     element: <SignIn />
+  },
+  {
+    path: '/register',
+    element: <SignUp />
   },
   {
     path: '/dashboard',
