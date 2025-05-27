@@ -16,9 +16,6 @@ import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
 import SignUp from './auth/SignUp';
 
-
-
-
 const router = createBrowserRouter([
   
   {
