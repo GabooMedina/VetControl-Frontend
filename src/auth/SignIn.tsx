@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
+import { login } from './services/authService';
 import { showToast } from '../components/shared/Toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -24,12 +25,18 @@ const SignIn = () => {
       navigate('/dashboard');
     } catch {
       showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
+      const response = await login(email, password);
+      if (response) {
+        localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        navigate('/dashboard');
+      }
     }
   }, [email, password, navigate]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
 
   return (
     <>
@@ -65,12 +72,13 @@ const SignIn = () => {
               <div className="mb-4">
                 <input
                   type="text"
-                  placeholder="Correo Electrónico"
+                  placeholder="Ingresa tu email"
                   className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  autoComplete="username"
-                  aria-label="Usuario"
+                  autoComplete="email"
+                  aria-label="Email"
+                  required
                 />
               </div>
               <div className="mb-2 relative">
@@ -103,7 +111,16 @@ const SignIn = () => {
               >
                 Ingresar
               </button>
+
             </form>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                ¿No tienes una cuenta?{' '}
+                <a href="/register" className="text-blue-900 hover:underline">
+                  Regístrate aquí
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
