@@ -21,15 +21,16 @@ const SignIn = () => {
     try {
       // Aquí irá la lógica de autenticación del backend
       // console.log('Iniciando sesión con:', { email, password });
-      showToast.success('Inicio de sesión exitoso');
-      navigate('/dashboard');
-    } catch {
-      showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
       const response = await login(email, password);
       if (response) {
+        console.log('Inicio de sesión exitoso:', response);
         localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        showToast.success('Inicio de sesión exitoso');
         navigate('/dashboard');
       }
+    } catch {
+      showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
+      
     }
   }, [email, password, navigate]);
 
@@ -100,11 +101,7 @@ const SignIn = () => {
                   {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
-              <div className="text-right mb-6">
-                <button type="button" className="text-sm text-gray-600 hover:text-blue-900">
-                  Registrate
-                </button>
-              </div>
+              
               <button
                 type="submit"
                 className="w-full p-3 bg-gray-300 hover:bg-gray-400 rounded text-gray-800 font-medium text-base md:text-lg transition-colors"
