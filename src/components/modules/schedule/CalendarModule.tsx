@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   format,
   addDays,
@@ -10,54 +10,46 @@ import {
   endOfWeek,
   isSameMonth,
   isSameDay,
-  parse,
 } from "date-fns";
-
-interface Cita {
-  id: number;
-  nombre: string;
-  fecha: string;
-  hora: string;
-}
+import { es } from "date-fns/locale";
+import { useAppointmentStore } from "../../../store/appointmentStore";
+import { showToast } from "../../shared/Toast";
+import { getUsuarios } from "./services/usuarioService";
+import { getMascotas } from "./services/mascotaService";
+import { createAppointment } from "./services/appointmentService";
 
 const CalendarModule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  const [citas, setCitas] = useState<Cita[]>([
-    {
-      id: 1,
-      nombre: "Consulta médica",
-      fecha: format(new Date(), "yyyy-MM-dd"),
-      hora: "10:00",
-    },
-    {
-      id: 2,
-      nombre: "Reunión de proyecto",
-      fecha: format(addDays(new Date(), 2), "yyyy-MM-dd"),
-      hora: "14:30",
-    },
-    {
-      id: 3,
-      nombre: "Corte de cabello",
-      fecha: format(addDays(new Date(), 5), "yyyy-MM-dd"),
-      hora: "09:00",
-    },
-    {
-      id: 4,
-      nombre: "Control dental",
-      fecha: format(subMonths(new Date(), 1), "yyyy-MM-dd"),
-      hora: "16:00",
-    },
-  ]);
-
   const [modalOpen, setModalOpen] = useState(false);
-  const [nuevaCita, setNuevaCita] = useState<Cita>({
-    id: 0,
-    nombre: "",
-    fecha: "",
-    hora: "",
-  });
   const [busqueda, setBusqueda] = useState("");
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [mascotas, setMascotas] = useState<any[]>([]);
+  // Zustand store
+  const { appointments, addAppointment } = useAppointmentStore();
+
+  // Estado local para nueva cita (estructura backend)
+  const [nuevaCita, setNuevaCita] = useState({
+    fecha_hora: "",
+    motivo: "",
+    estado: "Pendiente",
+    usuarioId: { id: "" },
+    mascotaId: { id: "" },
+  });
+
+  useEffect(() => {
+    if (modalOpen) {
+      getUsuarios().then((res) => {
+        if (Array.isArray(res)) setUsuarios(res);
+        else if (res && Array.isArray(res.data)) setUsuarios(res.data);
+        else setUsuarios([]);
+      });
+      getMascotas().then((res) => {
+        if (Array.isArray(res)) setMascotas(res);
+        else if (res && Array.isArray(res.data)) setMascotas(res.data);
+        else setMascotas([]);
+      });
+    }
+  }, [modalOpen]);
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
@@ -70,31 +62,38 @@ const CalendarModule: React.FC = () => {
     });
   };
 
-  const agregarCita = () => {
-    if (!nuevaCita.nombre || !nuevaCita.fecha || !nuevaCita.hora) {
-      alert("Por favor, completa todos los campos");
-      return;
-    }
-    const nueva = {
-      ...nuevaCita,
-      id: citas.length + 1,
-    };
-    setCitas([...citas, nueva]);
-    setModalOpen(false);
-    setNuevaCita({ id: 0, nombre: "", fecha: "", hora: "" });
+  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNuevaCita({ ...nuevaCita, usuarioId: { id: e.target.value } });
+  };
+  const handlePetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNuevaCita({ ...nuevaCita, mascotaId: { id: e.target.value } });
   };
 
-  const citasHoy = citas.filter(
-    (c) => format(new Date(c.fecha), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
-  );
+  const agregarCita = async () => {
+    if (!nuevaCita.motivo || !nuevaCita.fecha_hora || !nuevaCita.usuarioId.id || !nuevaCita.mascotaId.id) {
+      showToast.error("Por favor, completa todos los campos");
+      return;
+    }
+    try {
+      const citaCreada = await createAppointment(nuevaCita);
+      addAppointment(citaCreada); // Actualiza Zustand con la cita real del backend
+      setModalOpen(false);
+      setNuevaCita({ fecha_hora: "", motivo: "", estado: "Pendiente", usuarioId: { id: "" }, mascotaId: { id: "" } });
+      showToast.success("Cita agregada correctamente");
+    } catch (error) {
+      showToast.error("Error al crear la cita");
+    }
+  };
 
-  const citasProximas = citas.filter(
-    (c) =>
-      format(new Date(c.fecha), "yyyy-MM-dd") > format(new Date(), "yyyy-MM-dd")
+  // Filtrado y agrupación
+  const citasHoy = appointments.filter(
+    (c) => format(new Date(c.fecha_hora), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
   );
-
-  const citasFiltradas = citas.filter((c) =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  const citasProximas = appointments.filter(
+    (c) => format(new Date(c.fecha_hora), "yyyy-MM-dd") > format(new Date(), "yyyy-MM-dd")
+  );
+  const citasFiltradas = appointments.filter((c) =>
+    c.motivo.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const renderHeader = () => (
@@ -107,7 +106,7 @@ const CalendarModule: React.FC = () => {
         ←
       </button>
       <h2 className="text-xl font-bold text-gray-700">
-        {format(currentDate, "MMMM yyyy")}
+        {format(currentDate, "MMMM yyyy", { locale: es })}
       </h2>
       <button
         onClick={nextMonth}
@@ -121,12 +120,11 @@ const CalendarModule: React.FC = () => {
 
   const renderDays = () => {
     const dateFormat = "eee";
-    const startDate = startOfWeek(currentDate, { weekStartsOn: 0 });
-
+    const startDate = startOfWeek(currentDate, { weekStartsOn: 0, locale: es });
     return (
       <div className="grid grid-cols-7 text-center font-semibold border-b border-gray-300 pb-2 mb-2 text-gray-600 uppercase text-xs select-none">
         {[...Array(7)].map((_, i) => (
-          <div key={i}>{format(addDays(startDate, i), dateFormat)}</div>
+          <div key={i}>{format(addDays(startDate, i), dateFormat, { locale: es })}</div>
         ))}
       </div>
     );
@@ -145,8 +143,8 @@ const CalendarModule: React.FC = () => {
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         const cloneDay = day;
-        const citasDelDia = citas.filter((c) =>
-          isSameDay(parse(c.fecha, "yyyy-MM-dd", new Date()), cloneDay)
+        const citasDelDia = appointments.filter((c) =>
+          isSameDay(new Date(c.fecha_hora), cloneDay)
         );
 
         const isToday = isSameDay(day, new Date());
@@ -173,10 +171,17 @@ const CalendarModule: React.FC = () => {
                 citasDelDia.map((cita) => (
                   <li
                     key={cita.id}
-                    className="mb-0.5 truncate"
-                    title={`${cita.nombre} - ${cita.hora}`}
+                    className="mb-0.5 truncate flex items-center gap-1"
+                    title={`${cita.motivo} - ${format(new Date(cita.fecha_hora), "HH:mm")}`}
                   >
-                    • {cita.nombre} <span className="text-gray-500">({cita.hora})</span>
+                    <span className={`inline-block w-2 h-2 rounded-full ${
+                      cita.estado === "Pendiente"
+                        ? "bg-yellow-400"
+                        : cita.estado === "Confirmada"
+                        ? "bg-green-500"
+                        : "bg-red-400"
+                    }`}></span>
+                    {cita.motivo} <span className="text-gray-500">({format(new Date(cita.fecha_hora), "HH:mm")})</span>
                   </li>
                 ))
               ) : (
@@ -227,7 +232,7 @@ const CalendarModule: React.FC = () => {
           <ul className="list-disc list-inside text-gray-700 space-y-1">
             {citasHoy.map((c) => (
               <li key={c.id} className="hover:underline cursor-default">
-                {c.nombre} - <span className="font-mono">{c.hora}</span>
+                {c.motivo} - <span className="font-mono">{format(new Date(c.fecha_hora), "HH:mm")}</span>
               </li>
             ))}
           </ul>
@@ -243,8 +248,8 @@ const CalendarModule: React.FC = () => {
           <ul className="list-disc list-inside text-gray-700 space-y-1">
             {citasProximas.map((c) => (
               <li key={c.id} className="hover:underline cursor-default">
-                {c.nombre} - <span className="font-mono">{c.fecha}</span> -{" "}
-                <span className="font-mono">{c.hora}</span>
+                {c.motivo} - <span className="font-mono">{c.fecha_hora.split("T")[0]}</span> -{" "}
+                <span className="font-mono">{format(new Date(c.fecha_hora), "HH:mm")}</span>
               </li>
             ))}
           </ul>
@@ -275,43 +280,57 @@ const CalendarModule: React.FC = () => {
             >
               Agregar Nueva Cita
             </h3>
-
             <label className="block mb-3">
-              <span className="text-gray-700 font-semibold mb-1 block">Nombre</span>
+              <span className="text-gray-700 font-semibold mb-1 block">Motivo</span>
               <input
                 type="text"
-                name="nombre"
-                value={nuevaCita.nombre}
+                name="motivo"
+                value={nuevaCita.motivo}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="Ejemplo: Consulta médica"
                 autoFocus
               />
             </label>
-
             <label className="block mb-3">
-              <span className="text-gray-700 font-semibold mb-1 block">Fecha</span>
+              <span className="text-gray-700 font-semibold mb-1 block">Fecha y Hora</span>
               <input
-                type="date"
-                name="fecha"
-                value={nuevaCita.fecha}
+                type="datetime-local"
+                name="fecha_hora"
+                value={nuevaCita.fecha_hora}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-                min={format(new Date(), "yyyy-MM-dd")}
+                min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
               />
             </label>
-
+            <label className="block mb-3">
+              <span className="text-gray-700 font-semibold mb-1 block">Usuario</span>
+              <select
+                name="usuarioId"
+                value={nuevaCita.usuarioId.id}
+                onChange={handleUserChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              >
+                <option value="">Selecciona un usuario</option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nombre || u.email || u.id}</option>
+                ))}
+              </select>
+            </label>
             <label className="block mb-5">
-              <span className="text-gray-700 font-semibold mb-1 block">Hora</span>
-              <input
-                type="time"
-                name="hora"
-                value={nuevaCita.hora}
-                onChange={handleChange}
+              <span className="text-gray-700 font-semibold mb-1 block">Mascota</span>
+              <select
+                name="mascotaId"
+                value={nuevaCita.mascotaId.id}
+                onChange={handlePetChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
+              >
+                <option value="">Selecciona una mascota</option>
+                {mascotas.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nombre || m.id}</option>
+                ))}
+              </select>
             </label>
-
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setModalOpen(false)}

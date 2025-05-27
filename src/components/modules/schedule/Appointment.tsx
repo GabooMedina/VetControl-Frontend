@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { CrudModal } from "../../shared/Modal";
 import { PrimaryButton } from "../../shared/PrimaryButton";
@@ -6,44 +6,67 @@ import DataTable from "../../shared/DataTable";
 import { Field } from "../../../Interfaces/TypesData";
 import { useAppointmentStore } from "../../../store/appointmentStore";
 import { fetchAppointments } from "./services/appointmentService";
-
-const mockClients = [
-  { id: "1", name: "Juan Pérez" },
-  { id: "2", name: "María González" },
-  { id: "3", name: "Carlos Rodríguez" },
-  { id: "4", name: "Ana Martínez" },
-  { id: "5", name: "Luis Sánchez" },
-];
-
-const mockPets = [
-  { id: "1", name: "Max", species: "Perro", clientId: "1" },
-  { id: "2", name: "Luna", species: "Gato", clientId: "2" },
-  { id: "3", name: "Rocky", species: "Perro", clientId: "3" },
-  { id: "4", name: "Coco", species: "Ave", clientId: "4" },
-  { id: "5", name: "Nala", species: "Gato", clientId: "5" },
-];
+import { getUsuarios } from "./services/usuarioService";
+import { getMascotas } from "./services/mascotaService";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export function AppointmentModule() {
   const { appointments, setAppointments, addAppointment, editAppointment, deleteAppointment } = useAppointmentStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [pets, setPets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fields: Field[] = [
+  useEffect(() => {
+    setLoading(true);
+    fetchAppointments()
+      .then(data => setAppointments(data))
+      .catch(err => console.error("Error cargando citas:", err))
+      .finally(() => setLoading(false));
+  }, [setAppointments]);
+
+  // Cargar usuarios y mascotas en paralelo para mejorar tiempos de carga
+  useEffect(() => {
+    Promise.all([getUsuarios(), getMascotas()]).then(([resUsuarios, resMascotas]) => {
+      if (Array.isArray(resUsuarios)) setClients(resUsuarios);
+      else if (resUsuarios && Array.isArray(resUsuarios.data)) setClients(resUsuarios.data);
+      else setClients([]);
+      if (Array.isArray(resMascotas)) setPets(resMascotas);
+      else if (resMascotas && Array.isArray(resMascotas.data)) setPets(resMascotas.data);
+      else setPets([]);
+    });
+  }, []);
+
+  // Memorizar opciones de selects para evitar recrearlas en cada render
+  const clientOptions = useMemo(() =>
+    clients.map(c => ({ label: c.nombre || c.name || c.email || c.id, value: c.id })), [clients]);
+  const petOptions = useMemo(() =>
+    pets.map(p => ({ label: p.nombre || p.name || p.id, value: p.id })), [pets]);
+
+  // Memorizar fields para evitar recreación
+  const fields: Field[] = useMemo(() => [
     {
       name: "usuarioId",
       label: "Cliente",
       type: "select",
       required: true,
-      options: mockClients.map(c => ({ label: c.name, value: c.id })),
+      options: clientOptions,
     },
     {
       name: "mascotaId",
       label: "Mascota",
       type: "select",
       required: true,
-      options: mockPets.map(p => ({ label: p.name, value: p.id })),
+      options: petOptions,
     },
-    { name: "fecha_hora", label: "Fecha y Hora", type: "text", required: true },
+    {
+      name: "fecha_hora",
+      label: "Fecha y Hora",
+      type: "date",
+      required: true,
+    },
     { name: "motivo", label: "Motivo", type: "text", required: true },
     {
       name: "estado",
@@ -56,13 +79,19 @@ export function AppointmentModule() {
         { label: "Cancelada", value: "Cancelada" },
       ],
     },
-  ];
+  ], [clientOptions, petOptions]);
 
-  useEffect(() => {
-    fetchAppointments()
-      .then(data => setAppointments(data))
-      .catch(err => console.error("Error cargando citas:", err));
-  }, [setAppointments]);
+  // Optimizar búsqueda de nombre de cliente y mascota
+  const getClientName = useCallback((usuarioId: any) => {
+    const id = usuarioId?.id || usuarioId;
+    const c = clients.find(c => c.id === id);
+    return c?.nombre || c?.name || "";
+  }, [clients]);
+  const getPetName = useCallback((mascotaId: any) => {
+    const id = mascotaId?.id || mascotaId;
+    const p = pets.find(p => p.id === id);
+    return p?.nombre || p?.name || "";
+  }, [pets]);
 
   const handleCreate = () => {
     setSelectedAppointment(null);
@@ -82,9 +111,11 @@ export function AppointmentModule() {
   const handleSubmit = (data: any) => {
     // Adaptar datos para el store y la API
     const adaptedData = {
-      ...data,
-      usuarioId: { id: data.usuarioId },
-      mascotaId: { id: data.mascotaId },
+      fecha_hora: data.fecha_hora,
+      motivo: data.motivo,
+      estado: data.estado,
+      usuarioId: { id: typeof data.usuarioId === "object" ? data.usuarioId.id : data.usuarioId },
+      mascotaId: { id: typeof data.mascotaId === "object" ? data.mascotaId.id : data.mascotaId },
     };
     if (selectedAppointment) {
       editAppointment(selectedAppointment.id, adaptedData);
@@ -94,10 +125,10 @@ export function AppointmentModule() {
     setIsModalOpen(false);
   };
 
-  const getClientName = (usuarioId: any) =>
-    mockClients.find(c => c.id === (usuarioId?.id || usuarioId))?.name || "";
-  const getPetName = (mascotaId: any) =>
-    mockPets.find(p => p.id === (mascotaId?.id || mascotaId))?.name || "";
+  // Mejorar UX: mostrar skeletons solo si no hay datos cargados
+  const loadingClients = clients.length === 0;
+  const loadingPets = pets.length === 0;
+  const loadingData = loading || (loadingClients && loadingPets);
 
   return (
     <div className="p-4">
@@ -108,23 +139,31 @@ export function AppointmentModule() {
         </PrimaryButton>
       </div>
 
-      <DataTable
-        fields={[
-          { name: "clientName", label: "Cliente" },
-          { name: "petName", label: "Mascota" },
-          { name: "fecha_hora", label: "Fecha y Hora" },
-          { name: "motivo", label: "Motivo" },
-          { name: "estado", label: "Estado" },
-        ]}
-        initialData={appointments.map(app => ({
-          ...app,
-          clientName: getClientName(app.usuarioId),
-          petName: getPetName(app.mascotaId),
-        }))}
-        onEdit={handleEdit}
-        onDelete={id => handleDelete(id)}
-        className="mt-1"
-      />
+      {loadingData ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} height={40} />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          fields={[
+            { name: "clientName", label: "Cliente" },
+            { name: "petName", label: "Mascota" },
+            { name: "fecha_hora", label: "Fecha y Hora" },
+            { name: "motivo", label: "Motivo" },
+            { name: "estado", label: "Estado" },
+          ]}
+          initialData={appointments.map(app => ({
+            ...app,
+            clientName: getClientName(app.usuarioId),
+            petName: getPetName(app.mascotaId),
+          }))}
+          onEdit={handleEdit}
+          onDelete={id => handleDelete(id)}
+          className="mt-1"
+        />
+      )}
 
       <CrudModal
         isOpen={isModalOpen}
