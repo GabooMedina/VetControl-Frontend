@@ -1,107 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { CrudModal } from "../../shared/Modal";
 import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field } from "../../../Interfaces/TypesData";
+import { Pet, getPets, createPet, updatePet, deletePet, getClientsForSelect } from "../../../services/records/petService";
+import { showToast } from "../../../components/shared/Toast";
+import { useNavigate } from "react-router-dom";
 
-const initialPets = [
-  {
-    id: "1",
-    nombre: 'Max',
-    especie: 'Perro',
-    raza: 'Labrador',
-    edad: '3 años',
-    peso: '25 kg',
-    propietario: 'Juan Pérez'
-  },
-  {
-    id: "2",
-    nombre: 'Luna',
-    especie: 'Gato',
-    raza: 'Siamés',
-    edad: '2 años',
-    peso: '4 kg',
-    propietario: 'María González'
-  },
-  {
-    id: "3",
-    nombre: 'Rocky',
-    especie: 'Perro',
-    raza: 'Pastor Alemán',
-    edad: '5 años',
-    peso: '30 kg',
-    propietario: 'Carlos Rodríguez'
-  },
-  {
-    id: "4",
-    nombre: 'Coco',
-    especie: 'Ave',
-    raza: 'Canario',
-    edad: '1 año',
-    peso: '0.2 kg',
-    propietario: 'Ana Martínez'
-  },
-  {
-    id: "5",
-    nombre: 'Nala',
-    especie: 'Gato',
-    raza: 'Persa',
-    edad: '4 años',
-    peso: '5 kg',
-    propietario: 'Luis Sánchez'
-  },
-  {
-    id: "6",
-    nombre: 'Bella',
-    especie: 'Perro',
-    raza: 'Golden Retriever',
-    edad: '2 años',
-    peso: '22 kg',
-    propietario: 'Laura Fernández'
-  },
-  {
-    id: "7",
-    nombre: 'Simba',
-    especie: 'Gato',
-    raza: 'Maine Coon',
-    edad: '3 años',
-    peso: '6 kg',
-    propietario: 'Pedro López'
-  },
-  {
-    id: "8",
-    nombre: 'Toby',
-    especie: 'Perro',
-    raza: 'Beagle',
-    edad: '4 años',
-    peso: '12 kg',
-    propietario: 'Sofía Ramírez'
-  },
-  {
-    id: "9",
-    nombre: 'Milo',
-    especie: 'Gato',
-    raza: 'Bengalí',
-    edad: '1 año',
-    peso: '3.5 kg',
-    propietario: 'Diego Castro'
-  },
-  {
-    id: "10",
-    nombre: 'Lola',
-    especie: 'Perro',
-    raza: 'Chihuahua',
-    edad: '5 años',
-    peso: '2.5 kg',
-    propietario: 'Valeria Navarro'
-  }
-];
 
 export function PetModule() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentPet, setCurrentPet] = useState<any>(null);
-  const [pets, setPets] = useState(initialPets);
+  const [currentPet, setCurrentPet] = useState<Pet | null>(null);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [clients, setClients] = useState<Array<{ value: string, label: string }>>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [petsData, clientsData] = await Promise.all([
+          getPets(),
+          getClientsForSelect()
+        ]);
+        setPets(petsData);
+        setClients(clientsData);
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          showToast.error("Sesión expirada. Por favor, inicie sesión nuevamente.");
+          navigate("/login");
+        } else {
+          showToast.error("Error al cargar los datos");
+          console.error("Failed to fetch data:", error);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+  // Campos para el DataTable (sin transformación)
+  const tableFields = [
+    { name: 'nombre', label: 'Nombre' },
+    { name: 'especie', label: 'Especie' },
+    { name: 'raza', label: 'Raza' },
+    { name: 'sexo', label: 'Sexo' },
+    { name: 'color', label: 'Color' }
+  ];
 
   const petFields: Field[] = [
     {
@@ -123,23 +71,35 @@ export function PetModule() {
       required: true
     },
     {
-      name: "edad",
-      label: "Edad",
+      name: "sexo",
+      label: "Sexo",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Macho", label: "Macho" },
+        { value: "Hembra", label: "Hembra" }
+      ]
+    },
+    {
+      name: "fecha_nacimiento",
+      label: "Fecha de Nacimiento",
+      type: "date",
+      required: true
+    },
+    {
+      name: "color",
+      label: "Color",
       type: "text",
       required: true
     },
     {
-      name: "peso",
-      label: "Peso",
-      type: "text",
-      required: true
-    },
-    {
-      name: "propietario",
+      name: "id_cliente",
       label: "Propietario",
-      type: "text",
-      required: true
+      type: "select",
+      required: false, // No requerido si no se va a mostrar
+      options: clients
     }
+
   ];
 
   const handleCreate = () => {
@@ -147,27 +107,82 @@ export function PetModule() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (pet: any) => {
-    setCurrentPet(pet);
+const handleEdit = (pet: Pet) => {
+    let normalizedIdCliente: string | null = null;
+    
+    if (pet.id_cliente !== null && pet.id_cliente !== undefined) {
+        normalizedIdCliente = typeof pet.id_cliente === 'string' 
+            ? pet.id_cliente 
+            : pet.id_cliente.id_cliente;
+    }
+    
+    setCurrentPet({
+        ...pet,
+        id_cliente: normalizedIdCliente
+    });
     setIsModalOpen(true);
+};
+
+const preparePetData = (formData: any): Pet => {
+    return {
+        ...formData,
+        id_cliente: formData.id_cliente || null
+    };
+};
+
+  const handleSubmit = async (formData: any) => {
+    try {
+      const apiData = preparePetData(formData);
+
+      if (currentPet && currentPet.id) {
+        const updatedPet = await updatePet(currentPet.id, apiData);
+        setPets(pets.map(pet =>
+          pet.id === currentPet.id ? updatedPet : pet
+        ));
+        showToast.success("Mascota Actualizada Correctamente");
+      } else {
+        const newPet = await createPet(apiData);
+        setPets([...pets, newPet]);
+        showToast.success("Mascota Creada Correctamente");
+      }
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("Error completo:", error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        showToast.error("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        navigate("/login");
+      } else {
+        showToast.error(error.response?.data?.message || "Error al guardar la mascota");
+      }
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setPets(pets.filter(pet => pet.id !== id));
-    setIsModalOpen(false);
-  };
-
-  const handleSubmit = (data: any) => {
-    if (currentPet) {
-      setPets(pets.map(pet =>
-        pet.id === currentPet.id ? { ...pet, ...data } : pet
-      ));
-    } else {
-      const newPet = { id: String(pets.length + 1), ...data };
-      setPets([...pets, newPet]);
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePet(id);
+      setPets(pets.filter(pet => pet.id !== id));
+      showToast.success("Mascota Eliminada Correctamente");
+    } catch (error: any) {
+      console.error("Error al eliminar:", error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        showToast.error("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        navigate("/login");
+      } else {
+        showToast.error(error.response?.data?.message || "Error al eliminar la mascota");
+      }
     }
     setIsModalOpen(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-gray-600 text-lg font-medium animate-pulse">
+          Cargando Mascotas...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-1 pb-4">
@@ -179,14 +194,7 @@ export function PetModule() {
       </div>
 
       <DataTable
-        fields={[
-          { name: 'nombre', label: 'Nombre' },
-          { name: 'especie', label: 'Especie' },
-          { name: 'raza', label: 'Raza' },
-          { name: 'edad', label: 'Edad' },
-          { name: 'peso', label: 'Peso' },
-          { name: 'propietario', label: 'Propietario' }
-        ]}
+        fields={tableFields}
         initialData={pets}
         onEdit={handleEdit}
         onDelete={(id) => handleDelete(id)}
@@ -200,7 +208,7 @@ export function PetModule() {
         fields={petFields}
         initialData={currentPet || {}}
         onSubmit={handleSubmit}
-        onDelete={currentPet ? () => handleDelete(currentPet.id) : undefined}
+        onDelete={currentPet ? () => currentPet.id && handleDelete(currentPet.id) : undefined}
         isEditing={!!currentPet}
       />
     </div>

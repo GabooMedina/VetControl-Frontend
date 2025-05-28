@@ -143,7 +143,7 @@ export function ClientModule() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="text-gray-600 text-lg font-medium animate-pulse">
-        Cargando clientes...
+        Cargando Clientes...
       </div>
     </div>
   );

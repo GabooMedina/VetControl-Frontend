@@ -1,121 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { CrudModal } from "../../shared/Modal";
 import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field } from "../../../Interfaces/TypesData";
-
-const initialHistories = [
-  {
-    id: "1",
-    mascota: 'Max',
-    propietario: 'Juan Pérez',
-    fecha: '14/5/2023',
-    diagnostico: 'Infección de oído',
-    tratamiento: 'Antibióticos por 7 días',
-    veterinario: 'Dr. García'
-  },
-  {
-    id: "2",
-    mascota: 'Luna',
-    propietario: 'María González',
-    fecha: '19/6/2023',
-    diagnostico: 'Vacunación anual',
-    tratamiento: 'Vacunas múltiples',
-    veterinario: 'Dra. Martinez'
-  },
-  {
-    id: "3",
-    mascota: 'Rocky',
-    propietario: 'Carlos Rodríguez',
-    fecha: '9/7/2023',
-    diagnostico: 'Dermatitis alérgica',
-    tratamiento: 'Corticoides y champú especial',
-    veterinario: 'Dr. López'
-  },
-  {
-    id: "4",
-    mascota: 'Max',
-    propietario: 'Juan Pérez',
-    fecha: '4/8/2023',
-    diagnostico: 'Control de rutina',
-    tratamiento: 'Desparasitación',
-    veterinario: 'Dra. Rodríguez'
-  },
-  {
-    id: "5",
-    mascota: 'Coco',
-    propietario: 'Ana Martinez',
-    fecha: '11/9/2023',
-    diagnostico: 'Problemas respiratorios',
-    tratamiento: 'Nebulizaciones y antibióticos',
-    veterinario: 'Dr. García'
-  },
-  {
-    id: "6",
-    mascota: 'Bella',
-    propietario: 'Laura Fernández',
-    fecha: '22/10/2023',
-    diagnostico: 'Fractura de pata',
-    tratamiento: 'Yeso y reposo',
-    veterinario: 'Dra. Martinez'
-  },
-  {
-    id: "7",
-    mascota: 'Simba',
-    propietario: 'Pedro López',
-    fecha: '5/11/2023',
-    diagnostico: 'Control postoperatorio',
-    tratamiento: 'Analgésicos y revisión',
-    veterinario: 'Dr. García'
-  },
-  {
-    id: "8",
-    mascota: 'Toby',
-    propietario: 'Sofía Ramírez',
-    fecha: '18/12/2023',
-    diagnostico: 'Alergia alimentaria',
-    tratamiento: 'Cambio de dieta',
-    veterinario: 'Dra. Rodríguez'
-  },
-  {
-    id: "9",
-    mascota: 'Milo',
-    propietario: 'Diego Castro',
-    fecha: '10/1/2024',
-    diagnostico: 'Castración',
-    tratamiento: 'Cirugía y cuidados postquirúrgicos',
-    veterinario: 'Dr. López'
-  },
-  {
-    id: "10",
-    mascota: 'Lola',
-    propietario: 'Valeria Navarro',
-    fecha: '25/2/2024',
-    diagnostico: 'Chequeo general',
-    tratamiento: 'Análisis de sangre y vacunas',
-    veterinario: 'Dra. Martinez'
-  }
-];
+import {
+  MedicalHistory,
+  getMedicalHistories,
+  createMedicalHistory,
+  updateMedicalHistory,
+  deleteMedicalHistory,
+  getPetsForSelect
+} from "../../../services/records/historyService";
+import { showToast } from "../../../components/shared/Toast";
+import { useNavigate } from "react-router-dom";
 
 export function HistoryModule() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentHistory, setCurrentHistory] = useState<any>(null);
-  const [histories, setHistories] = useState(initialHistories);
+  const [currentHistory, setCurrentHistory] = useState<MedicalHistory | null>(null);
+  const [histories, setHistories] = useState<MedicalHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pets, setPets] = useState<Array<{ value: string, label: string }>>([]);
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const historiesData = await getMedicalHistories();
+        const petsData = await getPetsForSelect();
+
+        setHistories(historiesData);
+        setPets(petsData);
+      } catch (error: any) {
+        console.error("Error completo:", error);
+        showToast.error("Error al cargar historiales médicos");
+
+        // Opcional: Mostrar datos vacíos o manejar de otra manera
+        setHistories([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
   const historyFields: Field[] = [
-    {
-      name: "mascota",
-      label: "Mascota",
-      type: "text",
-      required: true
-    },
-    {
-      name: "propietario",
-      label: "Propietario",
-      type: "text",
-      required: true
-    },
     {
       name: "fecha",
       label: "Fecha",
@@ -135,10 +65,17 @@ export function HistoryModule() {
       required: true
     },
     {
-      name: "veterinario",
-      label: "Veterinario",
+      name: "notas",
+      label: "Notas",
       type: "text",
-      required: true
+      required: false
+    },
+    {
+      name: "id_mascota",
+      label: "Mascota",
+      type: "select",
+      required: true,
+      options: pets
     }
   ];
 
@@ -147,27 +84,80 @@ export function HistoryModule() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (history: any) => {
-    setCurrentHistory(history);
+  const handleEdit = (history: MedicalHistory) => {
+    setCurrentHistory({
+      ...history,
+      id_mascota: history.id_mascota || { id_mascota: "" }
+    });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setHistories(histories.filter(history => history.id !== id));
-    setIsModalOpen(false);
+  const prepareHistoryData = (formData: any): MedicalHistory => {
+    // Buscar el nombre de la mascota seleccionada
+    const selectedPet = pets.find(p => p.value === formData.id_mascota);
+
+    return {
+      ...formData,
+      id_mascota: {
+        id_mascota: formData.id_mascota,
+        nombre: selectedPet?.label // Agregamos el nombre de la mascota
+      }
+    };
   };
 
-  const handleSubmit = (data: any) => {
-    if (currentHistory) {
-      setHistories(histories.map(history =>
-        history.id === currentHistory.id ? { ...history, ...data } : history
-      ));
-    } else {
-      const newHistory = { id: String(histories.length + 1), ...data };
-      setHistories([...histories, newHistory]);
+  const handleSubmit = async (formData: any) => {
+    try {
+      const apiData = prepareHistoryData(formData);
+
+      if (currentHistory && currentHistory.id) {
+        const updatedHistory = await updateMedicalHistory(currentHistory.id, apiData);
+        setHistories(histories.map(history =>
+          history.id === currentHistory.id ? updatedHistory : history
+        ));
+        showToast.success("Historial actualizado correctamente");
+      } else {
+        const newHistory = await createMedicalHistory(apiData);
+        setHistories([...histories, newHistory]);
+        showToast.success("Historial creado correctamente");
+      }
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("Error:", error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        showToast.error("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        navigate("/login");
+      } else {
+        showToast.error(error.response?.data?.message || "Error al guardar el historial");
+      }
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMedicalHistory(id);
+      setHistories(histories.filter(history => history.id !== id));
+      showToast.success("Historial eliminado correctamente");
+    } catch (error: any) {
+      console.error("Error al eliminar:", error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        showToast.error("Sesión expirada. Por favor, inicie sesión nuevamente.");
+        navigate("/login");
+      } else {
+        showToast.error(error.response?.data?.message || "Error al eliminar el historial");
+      }
     }
     setIsModalOpen(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-gray-600 text-lg font-medium animate-pulse">
+          Cargando Historiales Médicos...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-1 pb-4">
@@ -180,12 +170,26 @@ export function HistoryModule() {
 
       <DataTable
         fields={[
-          { name: 'mascota', label: 'Mascota' },
-          { name: 'propietario', label: 'Propietario' },
+          {
+            name: 'id_mascota',
+            label: 'Mascota',
+            render: (mascota: any) => {
+              // Primero intentar con el nombre directo
+              if (mascota?.nombre) return mascota.nombre;
+
+              // Si no tiene nombre, buscar en la lista de mascotas
+              if (mascota?.id_mascota) {
+                const pet = pets.find(p => p.value === mascota.id_mascota);
+                return pet?.label || 'Sin mascota';
+              }
+
+              return 'Sin mascota';
+            }
+          },
           { name: 'fecha', label: 'Fecha' },
           { name: 'diagnostico', label: 'Diagnóstico' },
           { name: 'tratamiento', label: 'Tratamiento' },
-          { name: 'veterinario', label: 'Veterinario' }
+          { name: 'notas', label: 'Notas' }
         ]}
         initialData={histories}
         onEdit={handleEdit}
@@ -200,7 +204,7 @@ export function HistoryModule() {
         fields={historyFields}
         initialData={currentHistory || {}}
         onSubmit={handleSubmit}
-        onDelete={currentHistory ? () => handleDelete(currentHistory.id) : undefined}
+        onDelete={currentHistory ? () => currentHistory.id && handleDelete(currentHistory.id) : undefined}
         isEditing={!!currentHistory}
       />
     </div>
