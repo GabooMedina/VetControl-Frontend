@@ -78,7 +78,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Ingresos Mensuales</h3>
-          <div className="w-full flex justify-center" style={{ minHeight: 260 }}>
+          <div className="w-full flex justify-center" style={{ minHeight: 280 }}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={ingresosMensuales}>
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
@@ -91,7 +91,7 @@ const Dashboard = () => {
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Distribución de Servicios</h3>
-          <div className="w-full flex justify-center" style={{ minHeight: 260 }}>
+          <div className="w-full flex justify-center" style={{ minHeight: 280 }}>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
@@ -118,7 +118,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Ingresos por Servicio</h3>
-          <div className="w-full flex justify-center" style={{ minHeight: 260 }}>
+          <div className="w-full flex justify-center" style={{ minHeight: 280 }}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={ingresosPorServicio}>
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
@@ -131,7 +131,7 @@ const Dashboard = () => {
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-center">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Pacientes por Especie</h3>
-          <div className="w-full flex justify-center" style={{ minHeight: 260 }}>
+          <div className="w-full flex justify-center" style={{ minHeight: 280 }}>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
