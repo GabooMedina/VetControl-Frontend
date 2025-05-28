@@ -94,6 +94,9 @@ export function AppointmentModule() {
             { label: "Pendiente", value: "Pendiente" },
             { label: "Confirmada", value: "Confirmada" },
             { label: "Cancelada", value: "Cancelada" },
+            { label: "Completada", value: "Completada" },
+            { label: "Reprogramada", value: "Reprogramada" },
+            { label: "No Presentado", value: "NoPresentado" },
           ],
         },
       ];

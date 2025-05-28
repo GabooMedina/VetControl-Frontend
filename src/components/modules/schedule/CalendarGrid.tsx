@@ -15,15 +15,30 @@ import { es } from "date-fns/locale";
 interface CalendarGridProps {
   currentDate: Date;
   appointments: any[];
+  onPrevMonth: () => void;
+  onNextMonth: () => void;
 }
 
-const CalendarGrid: React.FC<CalendarGridProps> = ({ currentDate, appointments }) => {
+const CalendarGrid: React.FC<CalendarGridProps> = ({ currentDate, appointments, onPrevMonth, onNextMonth }) => {
   const renderHeader = () => (
     <div className="flex justify-between items-center mb-4">
-      {/* Los botones de mes se manejan fuera de este componente */}
+      <button
+        className="px-2 py-1 rounded hover:bg-gray-200 text-gray-600"
+        onClick={onPrevMonth}
+        aria-label="Mes anterior"
+      >
+        &#8592;
+      </button>
       <h2 className="text-xl font-bold text-gray-700 w-full text-center">
         {format(currentDate, "MMMM yyyy", { locale: es })}
       </h2>
+      <button
+        className="px-2 py-1 rounded hover:bg-gray-200 text-gray-600"
+        onClick={onNextMonth}
+        aria-label="Mes siguiente"
+      >
+        &#8594;
+      </button>
     </div>
   );
 
@@ -78,12 +93,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ currentDate, appointments }
                     className="mb-0.5 truncate flex items-center gap-1"
                     title={`${cita.motivo} - ${format(parseISO(cita.fecha_hora), "HH:mm")}`}
                   >
-                    <span className={`inline-block w-2 h-2 rounded-full ${cita.estado === "Pendiente"
-                      ? "bg-yellow-400"
-                      : cita.estado === "Confirmada"
-                        ? "bg-green-500"
-                        : "bg-red-400"
-                      }`}></span>
+                    <span className={`inline-block w-2 h-2 rounded-full ${getEstadoColor(cita.estado)}`}></span>
                     {cita.motivo} <span className="text-gray-500">({format(parseISO(cita.fecha_hora), "HH:mm")})</span>
                   </li>
                 ))
@@ -103,6 +113,25 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({ currentDate, appointments }
       days = [];
     }
     return <div>{rows}</div>;
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case "Pendiente":
+        return "bg-yellow-400";
+      case "Confirmada":
+        return "bg-green-500";
+      case "Cancelada":
+        return "bg-red-500";
+      case "Completada":
+        return "bg-blue-500";
+      case "Reprogramada":
+        return "bg-purple-500";
+      case "NoPresentado":
+        return "bg-gray-400";
+      default:
+        return "bg-gray-400";
+    }
   };
 
   return (

@@ -269,13 +269,14 @@ useEffect(() => {
         ) : citasHoy.length > 0 ? (
           <ul className="space-y-3">
             {citasHoy.map((c) => {
-              const usuario = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId))?.nombre || c.usuarioId?.id || c.usuarioId;
+              const usuarioObj = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId));
+              const usuario = usuarioObj ? `${usuarioObj.nombre || ''} ${usuarioObj.apellido || ''}`.trim() : c.usuarioId?.id || c.usuarioId;
               const mascota = mascotas.find(m => m.id === (c.mascotaId?.id || c.mascotaId))?.nombre || c.mascotaId?.id || c.mascotaId;
               return (
                 <li key={c.id} className="bg-white border-l-4 border-green-500 rounded-md shadow p-3 flex flex-col">
                   <span className="flex items-center gap-1 text-green-700 font-bold text-lg mb-1">{format(parseISO(c.fecha_hora), "HH:mm")}</span>
                   <span className="text-gray-800 font-medium truncate">{usuario} - {mascota} {c.motivo && `(${c.motivo})`}</span>
-                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border border-green-300" : "bg-red-100 text-red-800 border border-red-300"}`}>{c.estado}</span>
+                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border-green-300" : c.estado === "Cancelada" ? "bg-red-100 text-red-800 border-red-300" : c.estado === "Completada" ? "bg-blue-100 text-blue-800 border-blue-300" : c.estado === "Reprogramada" ? "bg-purple-100 text-purple-800 border-purple-300" : c.estado === "NoPresentado" ? "bg-gray-100 text-gray-800 border-gray-300" : "bg-gray-100 text-gray-800 border-gray-300"}`}>{c.estado}</span>
                 </li>
               );
             })}
@@ -298,13 +299,14 @@ useEffect(() => {
         ) : citasProximas.length > 0 ? (
           <ul className="space-y-3">
             {citasProximas.map((c) => {
-              const usuario = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId))?.nombre || c.usuarioId?.id || c.usuarioId;
+              const usuarioObj = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId));
+              const usuario = usuarioObj ? `${usuarioObj.nombre || ''} ${usuarioObj.apellido || ''}`.trim() : c.usuarioId?.id || c.usuarioId;
               const mascota = mascotas.find(m => m.id === (c.mascotaId?.id || c.mascotaId))?.nombre || c.mascotaId?.id || c.mascotaId;
               return (
                 <li key={c.id} className="bg-white border-l-4 border-blue-500 rounded-md shadow p-3 flex flex-col">
                   <span className="flex items-center gap-1 text-blue-700 font-bold text-lg mb-1">{format(parseISO(c.fecha_hora), "dd MMMM", { locale: es })} - {format(parseISO(c.fecha_hora), "HH:mm")}</span>
                   <span className="text-gray-800 font-medium truncate">{usuario} - {mascota} {c.motivo && `(${c.motivo})`}</span>
-                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border border-green-300" : "bg-red-100 text-red-800 border border-red-300"}`}>{c.estado}</span>
+                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border border-green-300" : c.estado === "Cancelada" ? "bg-red-100 text-red-800 border border-red-300" : c.estado === "Completada" ? "bg-blue-100 text-blue-800 border border-blue-300" : c.estado === "Reprogramada" ? "bg-purple-100 text-purple-800 border border-purple-300" : c.estado === "NoPresentado" ? "bg-gray-100 text-gray-800 border border-gray-300" : "bg-gray-100 text-gray-800 border border-gray-300"}`}>{c.estado}</span>
                 </li>
               );
             })}
@@ -321,7 +323,12 @@ useEffect(() => {
       </div>
 
       {/* Calendario */}
-      <CalendarGrid currentDate={currentDate} appointments={appointments} />
+      <CalendarGrid 
+        currentDate={currentDate} 
+        appointments={appointments} 
+        onPrevMonth={prevMonth}
+        onNextMonth={nextMonth}
+      />
 
       {/* Modal para agregar cita */}
       {modalOpen && (
