@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { CrudModalProps } from "../../Interfaces/TypesData";
-import { Field } from "../../Interfaces/TypesData";
+import { CrudModalProps,Field} from "../../Interfaces/TypesData";
 
 export const CrudModal = ({
     isOpen,
@@ -11,7 +10,8 @@ export const CrudModal = ({
     onSubmit,
     onDelete,
     isEditing = false,
-}: CrudModalProps) => {
+    onFieldChange, // Nuevo prop opcional
+}: CrudModalProps & { onFieldChange?: (name: string, value: any) => void }) => {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -31,6 +31,7 @@ export const CrudModal = ({
 
     const handleChange = (name: string, value: string) => {
         setFormData((prev) => ({ ...prev, [name]: value }));
+        if (onFieldChange) onFieldChange(name, value); // Notificar cambio
         if (errors[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -69,6 +70,25 @@ export const CrudModal = ({
         onClose();
     };
 
+    const formatInputValue = (field: Field, value: any) => {
+        if (!value) return "";
+        if (field.type === "date") {
+            // Si es string tipo ISO, extraer solo yyyy-MM-dd
+            if (typeof value === "string" && value.length >= 10) {
+                return value.slice(0, 10);
+            }
+        }
+        if (field.type === "datetime-local") {
+            // Si es string tipo ISO, extraer yyyy-MM-ddTHH:mm
+            if (typeof value === "string" && value.length >= 16) {
+                // Quitar zona horaria si existe
+                const local = value.replace("Z", "").slice(0, 16);
+                return local;
+            }
+        }
+        return value;
+    };
+
     const renderField = (field: Field) => {
         switch (field.type) {
             case 'select':
@@ -103,7 +123,7 @@ export const CrudModal = ({
                     <input
                         id={field.name}
                         type={field.type || "text"}
-                        value={formData[field.name] || ""}
+                        value={formatInputValue(field, formData[field.name])}
                         onChange={(e) => handleChange(field.name, e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder={field.placeholder}

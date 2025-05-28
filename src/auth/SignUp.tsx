@@ -1,34 +1,60 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
-import { login } from './services/authService';
+import { register, login } from './services/authService';
+import { getCompanies, Company } from './services/companyService';
 
 const SignUp = () => {
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [empresa, setEmpresa] = useState('');
+  const [empresas, setEmpresas] = useState<Company[]>([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Cargar empresas al montar
+    Promise.all([
+      getCompanies()
+    ])
+      .then(([empresas]) => {
+        setEmpresas(empresas);
+      })
+      .catch(() => {
+        setEmpresas([]);
+      });
+  }, []);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('Por Favor, Complete Todos los Campos');
+    if (!nombre.trim() || !apellido.trim() || !email.trim() || !password.trim() || !empresa) {
+      setError('Por favor, complete todos los campos');
       return;
     }
     try {
-      // Aquí irá la lógica de autenticación del backend
+      const user = {
+        nombre,
+        apellido,
+        email,
+        contraseña: password, // Para el backend
+        password, // Para cumplir con el tipado local
+        id_empresa: empresa as any // Forzar a any para evitar error de tipo UUID
+      };
+      console.log('Registrando usuario:', user);
+      await register(user);
+      // Login automático tras registro
       const response = await login(email, password);
       if (response) {
-        localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        localStorage.setItem("token", response.access_token);
         navigate('/dashboard');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('Error al iniciar sesión. Verifique sus credenciales.');
+    } catch (error: any) {
+      setError(error?.response?.data?.message ?? 'Error al registrar. Verifique los datos.');
     }
-  }, [email, password, navigate]);
-
+  }, [nombre, apellido, email, password, empresa, navigate]);
 
   return (
     <>
@@ -60,11 +86,33 @@ const SignUp = () => {
         <div className="w-full md:w-1/2 flex items-center justify-center bg-white">
           <div className="w-full max-w-md p-4 sm:p-6 md:p-8">
             <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8 text-center">REGISTRARSE</h2>
-            <form onSubmit={handleSubmit} autoComplete="on" aria-label="Formulario de inicio de sesión">
-              <div className="mb-4">
+            <form onSubmit={handleSubmit} autoComplete="on" aria-label="Formulario de registro">
+              <div className="mb-2">
                 <input
                   type="text"
-                  placeholder="Ingresa tu email"
+                  placeholder="Nombre"
+                  className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                  aria-label="Nombre"
+                  required
+                />
+              </div>
+              <div className="mb-2">
+                <input
+                  type="text"
+                  placeholder="Apellido"
+                  className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
+                  value={apellido}
+                  onChange={e => setApellido(e.target.value)}
+                  aria-label="Apellido"
+                  required
+                />
+              </div>
+              <div className="mb-2">
+                <input
+                  type="email"
+                  placeholder="Email"
                   className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -85,6 +133,20 @@ const SignUp = () => {
                   required
                 />
               </div>
+              <div className="mb-4">
+                <select
+                  className="w-full p-3 bg-gray-200 rounded text-base md:text-lg"
+                  value={empresa}
+                  onChange={e => setEmpresa(e.target.value)}
+                  aria-label="Empresa"
+                  required
+                >
+                  <option value="">Selecciona una empresa</option>
+                  {empresas.map((emp) => (
+                    <option key={emp.id_empresa} value={emp.id_empresa}>{emp.nombre}</option>
+                  ))}
+                </select>
+              </div>
               {error && (
                 <div className="mb-2 text-red-600 text-sm" role="alert">{error}</div>
               )}
@@ -97,9 +159,8 @@ const SignUp = () => {
                 type="submit"
                 className="w-full p-3 bg-gray-300 hover:bg-gray-400 rounded text-gray-800 font-medium text-base md:text-lg transition-colors"
               >
-                Ingresar
+                Registrarse
               </button>
-
             </form>
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">

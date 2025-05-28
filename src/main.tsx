@@ -11,10 +11,11 @@ import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
 import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
-import ReportsModule from './components/modules/reports/Reports';
+import ReportsModule from './components/modules/reports/ReportsModule';
 import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
 import SignUp from './auth/SignUp';
+import Dashboard from './components/modules/reports/DashboardModule';
 
 const router = createBrowserRouter([
   
@@ -70,8 +71,8 @@ const router = createBrowserRouter([
       {
         path: 'informes',
         children: [
-          { path: 'estadisticas', element: <ReportsModule/> },
-          { path: 'reportes', element: <div>PAGINA REPORTES</div> }
+          { path: 'estadisticas', element: <Dashboard/> },
+          { path: 'reportes', element: <ReportsModule/> }
         ]
       }
     ]

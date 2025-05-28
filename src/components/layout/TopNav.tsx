@@ -24,8 +24,8 @@ export function TopNav({ onModuleChange }: TopNavProps) {
   const activeModule = getActiveModule();
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    navigate('/SignIn');
+    localStorage.removeItem('token'); // Elimina el token de sesión
+    navigate('/signin'); // Redirige a la pantalla de inicio de sesión
   };
 
   const modules = [
