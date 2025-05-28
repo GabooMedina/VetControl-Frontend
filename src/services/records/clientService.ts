@@ -1,36 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_BASE_URL;
-
-// Configuración de Axios para interceptor el token
-const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
-});
-
-// Interceptor para añadir el token a las solicitudes
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-
-// Interceptor para manejar errores de autenticación
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Puedes redirigir al login o manejar el error como prefieras
-            console.error("Sesión expirada o no autorizado");
-            // Ejemplo: window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
+import api from "../api";
 
 export interface Client {
     id?: string;
@@ -39,7 +7,7 @@ export interface Client {
     email: string;
     telefono: string;
     direccion: string;
-    id_empresa: Record<string, never> | any; // Para el objeto vacío {}
+    id_empresa: Record<string, never> | any;
 }
 
 export const getClients = async (): Promise<Client[]> => {
@@ -54,7 +22,6 @@ export const getClients = async (): Promise<Client[]> => {
         throw error;
     }
 };
-
 
 export const createClient = async (client: Omit<Client, "id">): Promise<Client> => {
     try {
