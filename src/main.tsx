@@ -11,7 +11,7 @@ import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
 import MedicationsModule from './components/modules/products/Medications';
 import InventoryModule from './components/modules/products/Inventory';
-import ReportsModule from './components/modules/reports/Reports';
+import ReportsModule from './components/modules/reports/DashboardModule';
 import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
 import SignUp from './auth/SignUp';
