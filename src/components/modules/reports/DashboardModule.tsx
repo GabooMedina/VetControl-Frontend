@@ -124,10 +124,47 @@ const Dashboard = () => {
   const pacientesPorEspecieFiltrado = datosMes.pacientesPorEspecie;
   const ingresosMensualesPorAnio = ingresosMensuales;
 
+  // KPIs dinámicos según vista
+  let kpiIngresos = 0;
+  let kpiPacientes = 0;
+  let kpiCitas = 0;
+  let kpiLabel = "";
+  if (vista === "anual") {
+    kpiIngresos = ingresosPorAnio.find(i => i.anio === anioSeleccionado.toString())?.ingreso || 0;
+    kpiPacientes = datosAnuales.pacientesPorEspecie.reduce((acc, cur) => acc + cur.value, 0);
+    kpiCitas = datosAnuales.distribucionServicios.reduce((acc, cur) => acc + cur.value, 0);
+    kpiLabel = `Año ${anioSeleccionado}`;
+  } else {
+    kpiIngresos = datosMes.ingresos;
+    kpiPacientes = datosMes.totalPacientes;
+    kpiCitas = datosMes.totalAtenciones;
+    const mesLabel = meses.find(m => m.value === mesSeleccionado)?.label || "";
+    kpiLabel = `${mesLabel} ${anioSeleccionado}`;
+  }
+
   return (
     <div className="p-8 font-sans bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Estadísticas y Reportes</h2>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-start">
+          <p className="text-gray-500 font-medium">Ingresos Totales</p>
+          <p className="text-sm text-gray-400 mb-1">{kpiLabel}</p>
+          <h2 className="text-2xl font-bold text-gray-800">${kpiIngresos.toLocaleString()}</h2>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-start">
+          <p className="text-gray-500 font-medium">Pacientes Activos</p>
+          <p className="text-sm text-gray-400 mb-1">{kpiLabel}</p>
+          <h2 className="text-2xl font-bold text-gray-800">{kpiPacientes.toLocaleString()}</h2>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col items-start">
+          <p className="text-gray-500 font-medium">Citas</p>
+          <p className="text-sm text-gray-400 mb-1">{kpiLabel}</p>
+          <h2 className="text-2xl font-bold text-gray-800">{kpiCitas.toLocaleString()}</h2>
+        </div>
       </div>
 
       <div className="flex gap-4 justify-end mb-6">
