@@ -18,3 +18,21 @@ export async function createAppointment(appointmentData: any) {
   });
   return response.data;
 }
+
+export async function updateAppointment(id: string, appointmentData: any) {
+  const response = await axios.patch(`${API_URL}/citas/${id}`, appointmentData, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  return response.data;
+}
+
+export async function deleteAppointment(id: string) {
+  const response = await axios.delete(`${API_URL}/citas/${id}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+  return response.data;
+}
