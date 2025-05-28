@@ -12,11 +12,18 @@ import {
   isSameDay,
 } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseISO } from "date-fns";
 import { useAppointmentStore } from "../../../store/appointmentStore";
 import { showToast } from "../../shared/Toast";
 import { getUsuarios } from "./services/usuarioService";
 import { getMascotas } from "./services/mascotaService";
-import { createAppointment } from "./services/appointmentService";
+import { createAppointment, fetchAppointments } from "./services/appointmentService";
+import { PrimaryButton } from "../../shared/PrimaryButton";
+import { Plus } from "lucide-react";
+import { CalendarDays, Clock } from 'lucide-react';
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import CalendarGrid from "./CalendarGrid";
 
 const CalendarModule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -24,8 +31,9 @@ const CalendarModule: React.FC = () => {
   const [busqueda, setBusqueda] = useState("");
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [mascotas, setMascotas] = useState<any[]>([]);
+  const [loadingCitas, setLoadingCitas] = useState(false);
   // Zustand store
-  const { appointments, addAppointment } = useAppointmentStore();
+  const { appointments, addAppointment, setAppointments } = useAppointmentStore();
 
   // Estado local para nueva cita (estructura backend)
   const [nuevaCita, setNuevaCita] = useState({
@@ -51,6 +59,34 @@ const CalendarModule: React.FC = () => {
     }
   }, [modalOpen]);
 
+  useEffect(() => {
+  getUsuarios().then((res) => {
+    if (Array.isArray(res)) setUsuarios(res);
+    else if (res && Array.isArray(res.data)) setUsuarios(res.data);
+    else setUsuarios([]);
+  });
+  getMascotas().then((res) => {
+    if (Array.isArray(res)) setMascotas(res);
+    else if (res && Array.isArray(res.data)) setMascotas(res.data);
+    else setMascotas([]);
+  });
+}, []);
+
+
+useEffect(() => {
+  if (usuarios.length > 0 && mascotas.length > 0) {
+    setLoadingCitas(true);
+    fetchAppointments()
+      .then((data) => {
+        if (Array.isArray(data)) setAppointments(data);
+        else if (data && Array.isArray(data.data)) setAppointments(data.data);
+        else setAppointments([]);
+      })
+      .catch(() => setAppointments([]))
+      .finally(() => setLoadingCitas(false));
+  }
+}, [usuarios, mascotas]);
+
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const today = () => setCurrentDate(new Date());
@@ -75,7 +111,12 @@ const CalendarModule: React.FC = () => {
       return;
     }
     try {
-      const citaCreada = await createAppointment(nuevaCita);
+      // Convertir la fecha local a UTC antes de enviarla al backend
+      const fechaUTC = new Date(nuevaCita.fecha_hora).toISOString();
+      const citaCreada = await createAppointment({
+        ...nuevaCita,
+        fecha_hora: fechaUTC,
+      });
       addAppointment(citaCreada); // Actualiza Zustand con la cita real del backend
       setModalOpen(false);
       setNuevaCita({ fecha_hora: "", motivo: "", estado: "Pendiente", usuarioId: { id: "" }, mascotaId: { id: "" } });
@@ -144,16 +185,15 @@ const CalendarModule: React.FC = () => {
       for (let i = 0; i < 7; i++) {
         const cloneDay = day;
         const citasDelDia = appointments.filter((c) =>
-          isSameDay(new Date(c.fecha_hora), cloneDay)
+          isSameDay(parseISO(c.fecha_hora), cloneDay)
         );
 
         const isToday = isSameDay(day, new Date());
 
         days.push(
           <div
-            className={`p-2 border border-gray-300 h-28 flex flex-col justify-start items-start overflow-hidden cursor-default ${
-              !isSameMonth(day, monthStart) ? "text-gray-300" : "text-gray-800"
-            } ${isToday ? "bg-green-100 font-semibold" : ""} rounded-md hover:bg-green-50 transition relative`}
+            className={`p-2 border border-gray-300 h-28 flex flex-col justify-start items-start overflow-hidden cursor-default ${!isSameMonth(day, monthStart) ? "text-gray-300" : "text-gray-800"
+              } ${isToday ? "bg-green-100 font-semibold" : ""} rounded-md hover:bg-green-50 transition relative`}
             key={day.toString()}
             title={format(day, "PPPP")}
           >
@@ -168,20 +208,19 @@ const CalendarModule: React.FC = () => {
 
             <ul className="text-xs overflow-y-auto max-h-20 w-full">
               {citasDelDia.length > 0 ? (
-                citasDelDia.map((cita) => (
+                citasDelDia.map((cita, idx) => (
                   <li
-                    key={cita.id}
+                    key={cita.id || idx}
                     className="mb-0.5 truncate flex items-center gap-1"
-                    title={`${cita.motivo} - ${format(new Date(cita.fecha_hora), "HH:mm")}`}
+                    title={`${cita.motivo} - ${format(parseISO(cita.fecha_hora), "HH:mm")}`}
                   >
-                    <span className={`inline-block w-2 h-2 rounded-full ${
-                      cita.estado === "Pendiente"
-                        ? "bg-yellow-400"
-                        : cita.estado === "Confirmada"
+                    <span className={`inline-block w-2 h-2 rounded-full ${cita.estado === "Pendiente"
+                      ? "bg-yellow-400"
+                      : cita.estado === "Confirmada"
                         ? "bg-green-500"
                         : "bg-red-400"
-                    }`}></span>
-                    {cita.motivo} <span className="text-gray-500">({format(new Date(cita.fecha_hora), "HH:mm")})</span>
+                      }`}></span>
+                    {cita.motivo} <span className="text-gray-500">({format(parseISO(cita.fecha_hora), "HH:mm")})</span>
                   </li>
                 ))
               ) : (
@@ -203,38 +242,43 @@ const CalendarModule: React.FC = () => {
     return <div>{rows}</div>;
   };
 
+  // Skeleton component usando react-loading-skeleton
+  const SkeletonCita = () => (
+    <li className="bg-gray-100 border-l-4 border-gray-300 rounded-md shadow p-3 flex flex-col">
+      <Skeleton height={20} width={96} className="mb-2" />
+      <Skeleton height={16} width={160} className="mb-2" />
+      <Skeleton height={16} width={64} className="self-end" />
+    </li>
+  );
+
   return (
     <div className="p-6 max-w-6xl mx-auto font-sans">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Gestión de Citas</h2>
 
-      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <input
-          type="text"
-          placeholder="Buscar cita por nombre..."
-          className="border border-gray-300 p-2 rounded shadow-sm w-full sm:w-1/2 focus:outline-none focus:ring-2 focus:ring-green-400"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          aria-label="Buscar citas"
-        />
-        <button
-          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow-md transition font-semibold"
-          onClick={() => setModalOpen(true)}
-          aria-label="Agregar nueva cita"
-        >
-          Nueva Cita
-        </button>
-      </div>
 
       {/* Citas de Hoy */}
       <section className="mb-8">
-        <h3 className="text-xl font-semibold text-gray-700 mb-3">Citas de Hoy</h3>
-        {citasHoy.length > 0 ? (
-          <ul className="list-disc list-inside text-gray-700 space-y-1">
-            {citasHoy.map((c) => (
-              <li key={c.id} className="hover:underline cursor-default">
-                {c.motivo} - <span className="font-mono">{format(new Date(c.fecha_hora), "HH:mm")}</span>
-              </li>
-            ))}
+        <h3 className="text-xl font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <CalendarDays className="w-5 h-5 text-green-600" />
+          Hoy
+        </h3>
+        {loadingCitas ? (
+          <ul className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => <SkeletonCita key={i} />)}
+          </ul>
+        ) : citasHoy.length > 0 ? (
+          <ul className="space-y-3">
+            {citasHoy.map((c) => {
+              const usuario = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId))?.nombre || c.usuarioId?.id || c.usuarioId;
+              const mascota = mascotas.find(m => m.id === (c.mascotaId?.id || c.mascotaId))?.nombre || c.mascotaId?.id || c.mascotaId;
+              return (
+                <li key={c.id} className="bg-white border-l-4 border-green-500 rounded-md shadow p-3 flex flex-col">
+                  <span className="flex items-center gap-1 text-green-700 font-bold text-lg mb-1">{format(parseISO(c.fecha_hora), "HH:mm")}</span>
+                  <span className="text-gray-800 font-medium truncate">{usuario} - {mascota} {c.motivo && `(${c.motivo})`}</span>
+                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border border-green-300" : "bg-red-100 text-red-800 border border-red-300"}`}>{c.estado}</span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-gray-500 italic">No hay citas hoy.</p>
@@ -243,27 +287,41 @@ const CalendarModule: React.FC = () => {
 
       {/* Citas Próximas */}
       <section className="mb-10">
-        <h3 className="text-xl font-semibold text-gray-700 mb-3">Citas Próximas</h3>
-        {citasProximas.length > 0 ? (
-          <ul className="list-disc list-inside text-gray-700 space-y-1">
-            {citasProximas.map((c) => (
-              <li key={c.id} className="hover:underline cursor-default">
-                {c.motivo} - <span className="font-mono">{c.fecha_hora.split("T")[0]}</span> -{" "}
-                <span className="font-mono">{format(new Date(c.fecha_hora), "HH:mm")}</span>
-              </li>
-            ))}
+        <h3 className="text-xl font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-400" />
+          Próximas citas
+        </h3>
+        {loadingCitas ? (
+          <ul className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => <SkeletonCita key={i} />)}
+          </ul>
+        ) : citasProximas.length > 0 ? (
+          <ul className="space-y-3">
+            {citasProximas.map((c) => {
+              const usuario = usuarios.find(u => u.id === (c.usuarioId?.id || c.usuarioId))?.nombre || c.usuarioId?.id || c.usuarioId;
+              const mascota = mascotas.find(m => m.id === (c.mascotaId?.id || c.mascotaId))?.nombre || c.mascotaId?.id || c.mascotaId;
+              return (
+                <li key={c.id} className="bg-white border-l-4 border-blue-500 rounded-md shadow p-3 flex flex-col">
+                  <span className="flex items-center gap-1 text-blue-700 font-bold text-lg mb-1">{format(parseISO(c.fecha_hora), "dd MMMM", { locale: es })} - {format(parseISO(c.fecha_hora), "HH:mm")}</span>
+                  <span className="text-gray-800 font-medium truncate">{usuario} - {mascota} {c.motivo && `(${c.motivo})`}</span>
+                  <span className={`mt-2 self-end text-xs px-2 py-0.5 rounded-full ${c.estado === "Pendiente" ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : c.estado === "Confirmada" ? "bg-green-100 text-green-800 border border-green-300" : "bg-red-100 text-red-800 border border-red-300"}`}>{c.estado}</span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-gray-500 italic">No hay citas próximas.</p>
         )}
       </section>
 
+      <div className="mb-6 flex flex-col sm:flex-row sm:justify-end sm:items-center gap-4">
+        <PrimaryButton onClick={() => setModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Nueva cita veterinaria
+        </PrimaryButton>
+      </div>
+
       {/* Calendario */}
-      <section className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
-        {renderHeader()}
-        {renderDays()}
-        {renderCells()}
-      </section>
+      <CalendarGrid currentDate={currentDate} appointments={appointments} />
 
       {/* Modal para agregar cita */}
       {modalOpen && (
