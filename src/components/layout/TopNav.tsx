@@ -18,6 +18,7 @@ export function TopNav({ onModuleChange }: TopNavProps) {
     if (path.includes('/productos') || path.includes('/inventario')) return 'productos';
     if (path.includes('/informes') || path.includes('/reportes')) return 'informes';
     if (path.includes('/facturacion')) return 'facturacion';
+    if (path.includes('/suscripcion')) return 'suscripcion';
     return 'consulta';
   };
 
@@ -33,7 +34,8 @@ export function TopNav({ onModuleChange }: TopNavProps) {
     { id: 'agenda', name: "Agenda", path: "/dashboard/agenda/calendario" },
     { id: 'productos', name: "Productos", path: "/dashboard/productos/inventario" },
     { id: 'informes', name: "Informes", path: "/dashboard/informes/estadisticas" },
-    { id: 'facturacion', name: "Facturación", path: "/dashboard/facturacion/facturas" }
+    { id: 'facturacion', name: "Facturación", path: "/dashboard/facturacion/facturas" },
+    { id: 'suscripcion', name: "Suscripción", path: "/dashboard/suscripcion" }
   ];
 
   const handleNavigation = (moduleId: string, path: string) => {
