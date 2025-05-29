@@ -1,14 +1,19 @@
 import { Link } from 'react-router-dom'
-import { 
-  User, 
-  PawPrint, 
-  ClipboardList, 
-  Search,
+import {
+  User,
+  PawPrint,
+  ClipboardList,
   Calendar,
   FileText,
   Package,
   Receipt,
-  BarChart3
+  BarChart3,
+  Folder,
+  FolderOpen,
+  Boxes,
+  Truck,
+  LayoutDashboard,
+  CreditCard
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -19,7 +24,7 @@ interface SidebarProps {
 
 export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps) {
   const getSidebarConfig = () => {
-    switch(activeModule) {
+    switch (activeModule) {
       case 'consulta':
         return {
           title: 'Registro',
@@ -41,8 +46,11 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
         return {
           title: 'Inventario',
           items: [
-            { name: 'inventario', label: 'Inventario', icon: <Package className="mr-3 h-5 w-5" /> },
-            { name: 'medicamentos', label: 'Medicamentos', icon: <ClipboardList className="mr-3 h-5 w-5" /> }
+            { name: 'categorias', label: 'Categorias', icon: <Folder className="mr-3 h-5 w-5" /> },
+            { name: 'subcategorias', label: 'Subcategorias', icon: <FolderOpen className="mr-3 h-5 w-5" /> },
+            { name: 'inventario', label: 'Productos', icon: <Package className="mr-3 h-5 w-5" /> },
+           // { name: 'proveedores', label: 'Proveedores', icon: <Truck className="mr-3 h-5 w-5" /> },
+           // { name: 'lotes', label: 'Lotes', icon: <Boxes className="mr-3 h-5 w-5" /> }
           ]
         }
       case 'facturacion':
@@ -77,21 +85,21 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
       <nav className="space-y-2">
         {items.map((item) => (
           <Link
-          key={item.name}
-          to={`/dashboard/${activeModule}/${item.name}`}
-          className={`
+            key={item.name}
+            to={`/dashboard/${activeModule}/${item.name}`}
+            className={`
             flex items-center px-4 py-3 rounded-lg text-lg font-medium
-            ${activeItem === item.name 
-              ? 'bg-[#003e40] font-semibold' 
-              : 'hover:bg-[#008888]'
-            }
+            ${activeItem === item.name
+                ? 'bg-[#003e40] font-semibold'
+                : 'hover:bg-[#008888]'
+              }
             transition-colors duration-200
           `}
-          onClick={() => onItemChange(item.name)}
-        >
-          {item.icon}
-          <span className="ml-2">{item.label}</span>
-        </Link>
+            onClick={() => onItemChange(item.name)}
+          >
+            {item.icon}
+            <span className="ml-2">{item.label}</span>
+          </Link>
         ))}
       </nav>
     </aside>
