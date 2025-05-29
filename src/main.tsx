@@ -16,6 +16,10 @@ import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
 import SignUp from './auth/SignUp';
 import Dashboard from './components/modules/reports/DashboardModule';
+import SubscriptionModule from './components/modules/subscription/SubscriptionModule';
+import SubscriptionPlan from './components/modules/subscription/SubscriptionPlan';
+import SubscriptionChange from './components/modules/subscription/SubscriptionChange';
+import SubscriptionHistory from './components/modules/subscription/SubscriptionHistory';
 
 const router = createBrowserRouter([
   
@@ -64,6 +68,7 @@ const router = createBrowserRouter([
       {
         path: 'facturacion',
         children: [
+          { path: '', element: <Navigate to="facturas" replace /> },
           { path: 'facturas', element: <BillingModule/>},
           { path: 'pagos', element: <div>PAGINA PAGOS</div> }
         ]
@@ -73,6 +78,15 @@ const router = createBrowserRouter([
         children: [
           { path: 'estadisticas', element: <Dashboard/> },
           { path: 'reportes', element: <ReportsModule/> }
+        ]
+      },
+      {
+        path: 'suscripcion',
+        children: [
+          { path: 'plan', element: <SubscriptionPlan /> },
+          { path: 'cambiar', element: <SubscriptionChange /> },
+          { path: 'historial', element: <SubscriptionHistory /> },
+          { path: '', element: <SubscriptionPlan /> }
         ]
       }
     ]
