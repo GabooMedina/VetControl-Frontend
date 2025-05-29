@@ -82,13 +82,38 @@ const DataTable: React.FC<DataTableProps> = ({
                 <tr key={index} className="hover:bg-gray-50">
                   {fields.map((field) => {
                     const value = getFieldValue(item, field);
+                    // Si el render espera dos argumentos, pásalos; si no, solo uno
+                    if (field.render) {
+                      // Detecta si la función acepta dos argumentos
+                      if (field.render.length >= 2) {
+                        return (
+                          <td
+                            key={`${field.name}-${index}`}
+                            className="px-4 py-3 text-left text-sm text-black whitespace-normal border-b border-gray-200"
+                            style={{ wordWrap: 'break-word' }}
+                          >
+                            {field.render(value, item)}
+                          </td>
+                        );
+                      } else {
+                        return (
+                          <td
+                            key={`${field.name}-${index}`}
+                            className="px-4 py-3 text-left text-sm text-black whitespace-normal border-b border-gray-200"
+                            style={{ wordWrap: 'break-word' }}
+                          >
+                            {field.render(value)}
+                          </td>
+                        );
+                      }
+                    }
                     return (
                       <td
                         key={`${field.name}-${index}`}
                         className="px-4 py-3 text-left text-sm text-black whitespace-normal border-b border-gray-200"
                         style={{ wordWrap: 'break-word' }}
                       >
-                        {field.render ? field.render(value) : field.format ? field.format(value) : value || '-'}
+                        {field.format ? field.format(value) : value || '-'}
                       </td>
                     );
                   })}

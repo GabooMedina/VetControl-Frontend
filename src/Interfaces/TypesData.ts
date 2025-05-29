@@ -17,7 +17,7 @@ export interface Field {
 export interface TableField {
   name: string;
   label: string;
-  render?: (value: any) => ReactNode;
+  render?: (value: any, row?: any) => ReactNode;
   format?: (value: any) => string;
 }
 

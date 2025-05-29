@@ -47,7 +47,7 @@ export function Layout() {
         setPageTitle('Reportes')
         break
       default:
-        setPageTitle('Dashboard')
+        setPageTitle('Suscripción')
     }
   }
 

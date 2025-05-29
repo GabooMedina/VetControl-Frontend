@@ -69,6 +69,15 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
             { name: 'reportes', label: 'Reportes', icon: <FileText className="mr-3 h-5 w-5" /> }
           ]
         }
+      case 'suscripcion':
+        return {
+          title: 'Suscripción',
+          items: [
+            { name: 'plan', label: 'Plan Actual', icon: <Package className="mr-3 h-5 w-5" /> },
+            { name: 'cambiar', label: 'Cambiar Plan', icon: <Settings className="mr-3 h-5 w-5" /> },
+            { name: 'historial', label: 'Historial de Pagos', icon: <Receipt className="mr-3 h-5 w-5" /> }
+          ]
+        }
       default:
         return {
           title: 'Registro',
