@@ -12,7 +12,7 @@ import { getClients } from "../../../services/records/clientService";
 import { getCompanies } from "../../../auth/services/companyService";
 import { createInvoiceDetail, InvoiceDetail } from "./services/invoiceDetailsService";
 import { useInvoiceStore } from '../../../store/invoiceStore';
-import printJS from 'print-js';
+import printJS from "print-js";
 
 const mockInvoices = [
   {
@@ -294,62 +294,50 @@ export function BillingModule() {
   };
 
   const handlePrint = (invoice: any) => {
-    const details = mockInvoiceDetails[invoice.id] || [];
-    // Crear un contenedor oculto pero visible para impresión
-    const facturaDiv = document.createElement('div');
-    facturaDiv.id = 'factura-print-content';
-    facturaDiv.style.position = 'fixed';
-    facturaDiv.style.left = '-9999px';
-    facturaDiv.style.top = '0';
-    facturaDiv.style.width = '800px';
-    facturaDiv.style.background = 'white';
-    facturaDiv.innerHTML = `
-      <div class="factura-box" style="border:1px solid #e5e7eb;border-radius:8px;padding:24px;max-width:600px;font-family:Arial,sans-serif;background:white;">
-        <h1 style="color:#2563eb;">Factura ${invoice.id}</h1>
-        <div style="margin-bottom:12px;"><span style="font-weight:bold;color:#374151;">Cliente:</span> <span>${invoice.client}</span></div>
-        <div style="margin-bottom:12px;"><span style="font-weight:bold;color:#374151;">Fecha:</span> <span>${invoice.date}</span></div>
-        <div style="margin-bottom:12px;"><span style="font-weight:bold;color:#374151;">Estado:</span> <span style="${invoice.status === 'Pagada' ? 'color:#16a34a;' : 'color:#ca8a04;'}font-weight:bold;">${invoice.status}</span></div>
-        <hr style="margin:24px 0;" />
-        <table style="width:100%;border-collapse:collapse;margin-top:24px;">
-          <thead>
+  const details = mockInvoiceDetails[invoice.id] || [];
+
+  // Construir HTML para impresión
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 24px;">
+      <h2>Factura ${invoice.id}</h2>
+      <p><strong>Cliente:</strong> ${invoice.client}</p>
+      <p><strong>Fecha:</strong> ${formatDate(invoice.date)}</p>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid #ccc; padding: 8px;">Descripción</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Cantidad</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Precio Unitario</th>
+            <th style="border: 1px solid #ccc; padding: 8px;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${details.map(item => `
             <tr>
-              <th style="border:1px solid #e5e7eb;padding:8px;background:#f3f4f6;">Descripción</th>
-              <th style="border:1px solid #e5e7eb;padding:8px;background:#f3f4f6;">Cantidad</th>
-              <th style="border:1px solid #e5e7eb;padding:8px;background:#f3f4f6;">Precio Unitario</th>
-              <th style="border:1px solid #e5e7eb;padding:8px;background:#f3f4f6;">Subtotal</th>
+              <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
+              <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
+              <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.precio_unitario)}</td>
+              <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.subtotal)}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${details.length > 0 ? details.map(d => `
-              <tr>
-                <td style="border:1px solid #e5e7eb;padding:8px;">${d.descripcion}</td>
-                <td style="border:1px solid #e5e7eb;padding:8px;">${d.cantidad}</td>
-                <td style="border:1px solid #e5e7eb;padding:8px;">$${d.precio_unitario.toFixed(2)}</td>
-                <td style="border:1px solid #e5e7eb;padding:8px;">$${d.subtotal.toFixed(2)}</td>
-              </tr>
-            `).join('') : `<tr><td colspan='4' style='text-align:center;color:#888;'>Sin detalles</td></tr>`}
-          </tbody>
-        </table>
-        <div style="margin-top:16px;text-align:right;">
-          <span style="font-weight:bold;">Total:</span>
-          <span style="font-weight:bold;">$${invoice.total.toFixed(2)}</span>
-        </div>
-        <div style="text-align:center;color:#64748b;font-size:13px;margin-top:24px;">VetControl - Sistema de Gestión Veterinaria</div>
-      </div>
-    `;
-    document.body.appendChild(facturaDiv);
-    printJS({
-      printable: 'factura-print-content',
-      type: 'html',
-      style: `@media print { body { background: white !important; } .factura-box { box-shadow: none !important; } }`,
-      scanStyles: false
-    });
-    setTimeout(() => {
-      if (facturaDiv.parentNode) {
-        facturaDiv.parentNode.removeChild(facturaDiv);
-      }
-    }, 1000);
-  };
+          `).join('')}
+        </tbody>
+      </table>
+      <h3 style="text-align: right; margin-top: 20px;">Total: ${formatCurrency(invoice.total)}</h3>
+    </div>
+  `;
+
+  // Usar print-js para imprimir directamente el contenido HTML
+  printJS({
+    printable: htmlContent,
+    type: 'raw-html',
+    style: `
+      body { font-family: sans-serif; }
+      h2, h3 { margin: 0; padding: 0; }
+      table { border: 1px solid #ccc; }
+    `
+  });
+};
+
 
   // Calcular total de detalles
   useEffect(() => {
