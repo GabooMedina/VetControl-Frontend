@@ -9,8 +9,11 @@ import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
-import MedicationsModule from './components/modules/products/Medications';
-import InventoryModule from './components/modules/products/Inventory';
+import {CategoriesModule} from './components/modules/products/CategoriesModule';
+import {InventoryModule} from './components/modules/products/InventoryModule';
+//import LotsModule from './components/modules/products/LotsModule';
+import {SubCategoriesModule} from './components/modules/products/SubCategoriesModule';
+//import SuppliersModule from './components/modules/products/SuppliersModule';
 import ReportsModule from './components/modules/reports/ReportsModule';
 import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
@@ -61,8 +64,11 @@ const router = createBrowserRouter([
       {
         path: 'productos',
         children: [
+          { path: 'categorias', element: <CategoriesModule/> },
+          { path: 'subcategorias', element:<SubCategoriesModule/>},
           { path: 'inventario', element: <InventoryModule/> },
-          { path: 'medicamentos', element: <MedicationsModule/> }
+          { path: 'proveedores', element: <div>PROVEEDORES</div> },
+          { path: 'lotes', element: <div>LOTES</div> },
         ]
       },
       {

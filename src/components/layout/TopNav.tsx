@@ -32,7 +32,7 @@ export function TopNav({ onModuleChange }: TopNavProps) {
   const modules = [
     { id: 'consulta', name: "Consulta", path: "/dashboard/consulta/clientes" },
     { id: 'agenda', name: "Agenda", path: "/dashboard/agenda/calendario" },
-    { id: 'productos', name: "Productos", path: "/dashboard/productos/inventario" },
+    { id: 'productos', name: "Productos", path: "/dashboard/productos/categorias" },
     { id: 'informes', name: "Informes", path: "/dashboard/informes/estadisticas" },
     { id: 'facturacion', name: "Facturación", path: "/dashboard/facturacion/facturas" },
     { id: 'suscripcion', name: "Suscripción", path: "/dashboard/suscripcion" }
