@@ -13,7 +13,8 @@ import {
   Boxes,
   Truck,
   LayoutDashboard,
-  CreditCard
+  CreditCard,
+  Settings
 } from 'lucide-react'
 
 interface SidebarProps {
