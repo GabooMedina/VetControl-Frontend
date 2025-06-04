@@ -8,7 +8,7 @@ export interface Category {
 export const getCategories = async (): Promise<Category[]> => {
     const response = await api.get("/categorias");
     return response.data.map((cat: any) => ({
-        id: cat.id_categoria,  // mapea correctamente
+        id: cat.id_categoria, 
         nombre: cat.nombre
     }));
 };

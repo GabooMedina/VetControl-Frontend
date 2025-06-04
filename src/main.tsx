@@ -9,11 +9,11 @@ import { HistoryModule } from './components/modules/records/HistoryModule';
 import { BillingModule } from './components/modules/billing/BillingModule';
 import { AppointmentModule } from './components/modules/schedule/Appointment';
 import './index.css'
-import {CategoriesModule} from './components/modules/products/CategoriesModule';
-import {InventoryModule} from './components/modules/products/InventoryModule';
-//import LotsModule from './components/modules/products/LotsModule';
-import {SubCategoriesModule} from './components/modules/products/SubCategoriesModule';
-//import SuppliersModule from './components/modules/products/SuppliersModule';
+import { CategoriesModule } from './components/modules/products/CategoriesModule';
+import { InventoryModule } from './components/modules/products/InventoryModule';
+import { LotsModule } from './components/modules/products/LotsModule';
+import { SubCategoriesModule } from './components/modules/products/SubCategoriesModule';
+import { SuppliersModule } from './components/modules/products/SuppliersModule';
 import ReportsModule from './components/modules/reports/ReportsModule';
 import CalendarModule from './components/modules/schedule/CalendarModule';
 import { ToastProvider } from './components/shared/Toast';
@@ -25,7 +25,7 @@ import SubscriptionChange from './components/modules/subscription/SubscriptionCh
 import SubscriptionHistory from './components/modules/subscription/SubscriptionHistory';
 
 const router = createBrowserRouter([
-  
+
   {
     path: '/',
     element: <Navigate to="/signin" replace />
@@ -57,33 +57,33 @@ const router = createBrowserRouter([
       {
         path: 'agenda',
         children: [
-          { path: 'calendario', element: <CalendarModule/> },
-          { path: 'citas', element: <AppointmentModule/> }
+          { path: 'calendario', element: <CalendarModule /> },
+          { path: 'citas', element: <AppointmentModule /> }
         ]
       },
       {
         path: 'productos',
         children: [
-          { path: 'categorias', element: <CategoriesModule/> },
-          { path: 'subcategorias', element:<SubCategoriesModule/>},
-          { path: 'inventario', element: <InventoryModule/> },
-          { path: 'proveedores', element: <div>PROVEEDORES</div> },
-          { path: 'lotes', element: <div>LOTES</div> },
+          { path: 'categorias', element: <CategoriesModule /> },
+          { path: 'subcategorias', element: <SubCategoriesModule /> },
+          { path: 'inventario', element: <InventoryModule /> },
+          { path: 'proveedores', element: <SuppliersModule /> },
+          { path: 'lotes', element: <LotsModule /> },
         ]
       },
       {
         path: 'facturacion',
         children: [
           { path: '', element: <Navigate to="facturas" replace /> },
-          { path: 'facturas', element: <BillingModule/>},
+          { path: 'facturas', element: <BillingModule /> },
           { path: 'pagos', element: <div>PAGINA PAGOS</div> }
         ]
       },
       {
         path: 'informes',
         children: [
-          { path: 'estadisticas', element: <Dashboard/> },
-          { path: 'reportes', element: <ReportsModule/> }
+          { path: 'estadisticas', element: <Dashboard /> },
+          { path: 'reportes', element: <ReportsModule /> }
         ]
       },
       {
