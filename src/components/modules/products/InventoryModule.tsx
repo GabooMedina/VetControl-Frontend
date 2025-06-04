@@ -32,33 +32,44 @@ export function InventoryModule() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [empData, subcatData] = await Promise.all([
-        getEmpresas(),
-        getSubcategories()
-      ]);
-      
-      const invData = await getInventories(subcatData);
+    const fetchData = async () => {
+      try {
+        const [empData, subcatData, invData] = await Promise.all([
+          getEmpresas(),
+          getSubcategories(),
+          getInventories()
+        ]);
 
-      setEmpresas(empData);
-      setSubcategorias(subcatData);
-      setInventories(invData);
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        showToast.error("Sesión expirada. Inicie sesión nuevamente.");
-        navigate("/login");
-      } else {
-        showToast.error("Error al cargar productos, empresas o subcategorías.");
-        console.error("Error details:", error);
+        console.log("Empresas cargadas:", empData);
+        console.log("Subcategorías cargadas:", subcatData);
+        console.log("Inventarios cargados:", invData);
+
+        setEmpresas(empData);
+        setSubcategorias(subcatData);
+        setInventories(invData);
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          showToast.error("Sesión expirada. Inicie sesión nuevamente.");
+          navigate("/login");
+        } else {
+          showToast.error("Error al cargar productos, empresas o subcategorías.");
+          console.error("Error details:", error);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  fetchData();
-}, [navigate]);
+    };
+    fetchData();
+  }, [navigate]);
 
+  // Crear opciones para subcategorías con opción vacía
+  const subcategoryOptions = [
+    { label: "-- Sin subcategoría --", value: "" },
+    ...subcategorias.map(sub => ({
+      label: sub.nombre,
+      value: sub.id || ""
+    }))
+  ];
 
   const inventoryFields: Field[] = [
     {
@@ -93,11 +104,8 @@ export function InventoryModule() {
       name: "subcategoriaId",
       label: "Subcategoría",
       type: "select",
-      required: true,
-      options: subcategorias.map(sub => ({
-        label: sub.nombre,
-        value: sub.id || ""
-      }))
+      required: false,
+      options: subcategoryOptions
     }
   ];
 
@@ -111,24 +119,29 @@ export function InventoryModule() {
       showToast.error("Producto inválido para editar");
       return;
     }
+    console.log("Editando producto:", inv);
     setCurrentInventory(inv);
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (formData: Record<string, any>) => {
     try {
+      console.log("Datos del formulario:", formData);
+      
       if (!formData.nombre || !formData.descripcion || !formData.precio_unitario ||
-        !formData.id_empresa || !formData.subcategoriaId) {
-        throw new Error("Todos los campos son requeridos");
+        !formData.id_empresa) {
+        throw new Error("Los campos nombre, descripción, precio y empresa son requeridos");
       }
 
       const payload = {
         nombre: formData.nombre,
         descripcion: formData.descripcion,
         precio_unitario: parseFloat(formData.precio_unitario),
-        subcategoriaId: formData.subcategoriaId,
+        subcategoriaId: formData.subcategoriaId || null, // null si está vacío
         id_empresa: formData.id_empresa
       };
+
+      console.log("Payload preparado:", payload);
 
       if (currentInventory?.id) {
         const updated = await updateInventory(currentInventory.id, payload);
@@ -186,24 +199,48 @@ export function InventoryModule() {
             name: 'precio_unitario',
             label: 'Precio',
             render: (value: any) => {
-              // Convertir a número si es string
               const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-              // Verificar si es un número válido
               return !isNaN(numericValue) ? `$${numericValue.toFixed(2)}` : 'N/A';
             }
           },
           {
             name: 'id_empresa',
             label: 'Empresa',
-            render: (value: string) => {
-              return empresas.find(emp => emp.id === value)?.nombre || 'N/A';
+            render: (value: string | { id_empresa: string; nombre?: string }) => {
+              if (!value) return 'N/A';
+              
+              if (typeof value === 'object') {
+                return value.nombre || 'Empresa no encontrada';
+              }
+              
+              const empresa = empresas.find(emp => emp.id === value);
+              return empresa?.nombre || 'Empresa no encontrada';
             }
           },
           {
             name: 'subcategoriaId',
             label: 'Subcategoría',
-            render: (value: string) => {
-              return subcategorias.find(sub => sub.id === value)?.nombre || 'N/A';
+            render: (value: any) => {
+              // Si el valor es null, undefined o string vacío
+              if (value === null || value === undefined || value === "") {
+                return 'Sin subcategoría';
+              }
+
+              // Si el valor es un objeto con id_subcategoria
+              if (typeof value === 'object' && value.id_subcategoria) {
+                if (value.nombre) return value.nombre;
+                
+                const subcat = subcategorias.find(sub => sub.id === value.id_subcategoria);
+                return subcat?.nombre || 'Subcategoría no encontrada';
+              }
+
+              // Si es un string (ID), buscamos en las subcategorías cargadas
+              if (typeof value === 'string') {
+                const subcat = subcategorias.find(sub => sub.id === value);
+                return subcat?.nombre || 'Subcategoría no encontrada';
+              }
+
+              return 'Sin subcategoría';
             }
           }
         ]}
@@ -225,9 +262,11 @@ export function InventoryModule() {
               id_empresa: typeof currentInventory.id_empresa === 'object'
                 ? currentInventory.id_empresa.id_empresa
                 : currentInventory.id_empresa,
-              subcategoriaId: typeof currentInventory.subcategoriaId === 'object'
-                ? currentInventory.subcategoriaId.id_subcategoria
-                : currentInventory.subcategoriaId
+              subcategoriaId: currentInventory.subcategoriaId === null 
+                ? "" 
+                : (typeof currentInventory.subcategoriaId === 'object'
+                  ? currentInventory.subcategoriaId.id_subcategoria
+                  : currentInventory.subcategoriaId)
             }
             : {}
         }

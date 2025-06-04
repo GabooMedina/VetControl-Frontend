@@ -13,7 +13,8 @@ import {
   Boxes,
   Truck,
   LayoutDashboard,
-  CreditCard
+  CreditCard,
+  Settings
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -49,8 +50,8 @@ export function Sidebar({ activeModule, activeItem, onItemChange }: SidebarProps
             { name: 'categorias', label: 'Categorias', icon: <Folder className="mr-3 h-5 w-5" /> },
             { name: 'subcategorias', label: 'Subcategorias', icon: <FolderOpen className="mr-3 h-5 w-5" /> },
             { name: 'inventario', label: 'Productos', icon: <Package className="mr-3 h-5 w-5" /> },
-           // { name: 'proveedores', label: 'Proveedores', icon: <Truck className="mr-3 h-5 w-5" /> },
-           // { name: 'lotes', label: 'Lotes', icon: <Boxes className="mr-3 h-5 w-5" /> }
+            { name: 'proveedores', label: 'Proveedores', icon: <Truck className="mr-3 h-5 w-5" /> },
+            { name: 'lotes', label: 'Lotes', icon: <Boxes className="mr-3 h-5 w-5" /> }
           ]
         }
       case 'facturacion':
