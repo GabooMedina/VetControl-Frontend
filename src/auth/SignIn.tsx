@@ -19,18 +19,26 @@ const SignIn = () => {
       return;
     }
     try {
-      // Aquí irá la lógica de autenticación del backend
-      // console.log('Iniciando sesión con:', { email, password });
       const response = await login(email, password);
       if (response) {
         console.log('Inicio de sesión exitoso:', response);
-        localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        localStorage.setItem("token", response.access_token);
         showToast.success('Inicio de sesión exitoso');
+
+        // Obtener el usuario autenticado para conseguir su userId
+        const authenticatedUser = await import('./services/authService').then(mod => mod.getAuthenticatedUser());
+        if (authenticatedUser?.userId) {
+          // Usar el userId para obtener el usuario completo y guardar id_empresa
+          const user = await import('./services/userService').then(mod => mod.getUserById(authenticatedUser.userId));
+          if (user?.id_empresa) {
+            localStorage.setItem("empresa", user.id_empresa);
+          }
+        }
+
         navigate('/dashboard');
       }
     } catch {
       showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
-      
     }
   }, [email, password, navigate]);
 

@@ -22,12 +22,16 @@ export async function register(user: User) {
 
 // Funcion para obtener el usuario autenticado
 export async function getAuthenticatedUser() {
-  const response = await axios.get(`${API_URL}/auth/user`, {
-    headers: {
+  const response = await axios.post(
+    `${API_URL}/auth/Profile`,
+    {},
+    {
+      headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-    });
-    return response.data;
+      },
+    }
+  );
+  return response.data;
 }
 
 

@@ -1,3 +1,4 @@
+import { Company } from './../../../../auth/services/companyService';
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_BASE_URL;
@@ -23,6 +24,16 @@ export async function createInvoice(invoice: Invoice) {
     { headers: getAuthHeaders() }
   );
   return response.data;
+}
+
+export async function getInvoices(idCompany: number) {
+  // Obtiene todas las facturas de una empresa por su ID
+  const response = await axios.get(
+    `${API_URL}/facturas/empresa/${idCompany}`,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+  
 }
 
 export async function getInvoicesByID(invoiceId: number) {
