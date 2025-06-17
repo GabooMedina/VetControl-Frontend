@@ -26,7 +26,7 @@ export async function createInvoice(invoice: Invoice) {
   return response.data;
 }
 
-export async function getInvoices(idCompany: number) {
+export async function getInvoices(idCompany: string) {
   // Obtiene todas las facturas de una empresa por su ID
   const response = await axios.get(
     `${API_URL}/facturas/empresa/${idCompany}`,
@@ -36,7 +36,7 @@ export async function getInvoices(idCompany: number) {
   
 }
 
-export async function getInvoicesByID(invoiceId: number) {
+export async function getInvoicesByID(invoiceId: string) {
   // Obtiene una factura por su ID
   const response = await axios.get(
     `${API_URL}/facturas/${invoiceId}`,
@@ -57,7 +57,7 @@ export async function updateInvoice(
   return response.data;
 }
 
-export async function deleteInvoice(invoiceId: number) {
+export async function deleteInvoice(invoiceId: string) {
   // Elimina una factura por su ID
   const response = await axios.delete(
     `${API_URL}/facturas/${invoiceId}`,

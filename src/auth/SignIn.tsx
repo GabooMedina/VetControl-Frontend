@@ -2,10 +2,11 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
-import { login } from './services/authService';
 import { showToast } from '../components/shared/Toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
+import {  login ,getAuthenticatedUser } from './services/authService';
+import { getUserById } from './services/userService';
+import { Company } from '../Interfaces/Company';
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,12 +27,14 @@ const SignIn = () => {
         showToast.success('Inicio de sesión exitoso');
 
         // Obtener el usuario autenticado para conseguir su userId
-        const authenticatedUser = await import('./services/authService').then(mod => mod.getAuthenticatedUser());
+        const authenticatedUser = await getAuthenticatedUser();
         if (authenticatedUser?.userId) {
           // Usar el userId para obtener el usuario completo y guardar id_empresa
-          const user = await import('./services/userService').then(mod => mod.getUserById(authenticatedUser.userId));
+          const user = await getUserById(authenticatedUser.userId);
           if (user?.id_empresa) {
-            localStorage.setItem("empresa", user.id_empresa);
+            const empresa: Company= user.id_empresa
+            console.log('Empresa del usuario:', empresa.id_empresa.toString());
+            localStorage.setItem("empresa", empresa.id_empresa);
           }
         }
 

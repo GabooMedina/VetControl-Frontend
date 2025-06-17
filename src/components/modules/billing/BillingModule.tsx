@@ -4,19 +4,22 @@ import { CrudModal } from "../../shared/Modal";
 import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field, TableField } from "../../../Interfaces/TypesData";
-import { loadStripe } from "@stripe/stripe-js";
 import { createStripePaymentIntent } from "./services/stripeService";
 import { StripeEmbeddedForm } from "./StripeEmbeddedForm";
 import { createInvoice } from "./services/invoiceService";
 import { getClients } from "../../../services/records/clientService";
 import { getCompanies } from "../../../auth/services/companyService";
-import { createInvoiceDetail, InvoiceDetail } from "./services/invoiceDetailsService";
 import { useInvoiceStore } from '../../../store/invoiceStore';
 import printJS from "print-js";
-import { Company } from "../../../Interfaces/Company";
 import { getInvoices } from "./services/invoiceService";
+import axios from "axios";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import { showToast } from "../../shared/Toast";
 
-
+// Definición de la constante API_URL
+const API_URL = import.meta.env.VITE_BASE_URL;
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export function BillingModule() {
@@ -30,7 +33,7 @@ export function BillingModule() {
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [createdInvoiceId, setCreatedInvoiceId] = useState<number|null>(null);
-  const [details, setDetails] = useState<InvoiceDetail[]>([]);
+  const [details, setDetails] = useState<any[]>([]);
   const [detailsTotal, setDetailsTotal] = useState(0);
   const [addingDetail, setAddingDetail] = useState(false);
   const [detailForm, setDetailForm] = useState<{ descripcion: string; cantidad: number; precio_unitario: number; id_lote?: number }>({ descripcion: '', cantidad: 1, precio_unitario: 0, id_lote: undefined });
@@ -42,16 +45,7 @@ export function BillingModule() {
   }, [fetchInvoices]);
 
   // Efecto para cargar las facturas de la empresa
-  const companyData = localStorage.getItem("empresa");
-  let idEmpresa = null;
-  if (companyData) {
-    try {
-      const company = JSON.parse(companyData);
-      idEmpresa = company.id_empresa;
-    } catch (error) {
-      console.error("Error al parsear los datos de la empresa desde localStorage:", error);
-    }
-  }
+  const idEmpresa = localStorage.getItem("empresa");
 
   useEffect(() => {
     if (idEmpresa) {
@@ -176,11 +170,6 @@ export function BillingModule() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (invoice: any) => {
-    setCurrentInvoice(invoice);
-    setIsModalOpen(true);
-  };
-
   const handleDelete = (id: number) => {
     setInvoices(invoices.filter(invoice => invoice.id_factura !== id));
   };
@@ -206,7 +195,7 @@ export function BillingModule() {
             </tr>
           </thead>
           <tbody>
-            ${details.map((item: InvoiceDetail) => `
+            ${details.map((item: any) => `
               <tr>
                 <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
                 <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
@@ -264,7 +253,7 @@ export function BillingModule() {
     if (!createdInvoiceId) return;
     setAddingDetail(true);
     const subtotal = detailForm.cantidad * detailForm.precio_unitario;
-    const detail: InvoiceDetail = {
+    const detail: any = {
       descripcion: detailForm.descripcion,
       cantidad: detailForm.cantidad,
       precio_unitario: detailForm.precio_unitario,
@@ -349,7 +338,7 @@ export function BillingModule() {
       },
       detalles: [
         {
-          id_detalle: "b66d27d8-e77b-42d8-bdd6-a21e89edf366",
+          id_detalle: "b66d27d8-e77b-42d8-bd6a-b21e89edf366",
           descripcion: "Prueba1",
           cantidad: 1,
           precio_unitario: 50,
@@ -529,6 +518,76 @@ export function BillingModule() {
         </div>
       )}
     </div>
+  );
+}
+
+// Función para crear detalles de factura
+export async function createInvoiceDetail(data: any) {
+  const payload = {
+    descripcion: data.descripcion,
+    cantidad: data.cantidad,
+    precio_unitario: data.precio_unitario,
+    subtotal: data.subtotal,
+    id_factura: { id_factura: data.id_factura },
+    id_lote: data.id_lote ? { id_lote: data.id_lote } : undefined // Lote es opcional
+  };
+
+  try {
+    const response = await axios.post(`${API_URL}/invoice-details`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear detalles de factura:", error);
+    throw error;
+  }
+}
+
+function PaymentForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      showToast.error("Stripe no está cargado correctamente.");
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      showToast.error("CardElement no está disponible.");
+      return;
+    }
+
+    const { error } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+    });
+
+    if (error) {
+      showToast.error("Error al crear el método de pago: " + error.message);
+    } else {
+      showToast.success("Método de pago creado exitosamente.");
+      // Aquí puedes enviar el `paymentMethod` al backend para procesar el pago
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <CardElement options={{ style: { base: { fontSize: "16px" } } }} />
+      <button type="submit" disabled={!stripe}>
+        Pagar
+      </button>
+    </form>
+  );
+}
+
+export default function BillingModuleWrapper() {
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm />
+    </Elements>
   );
 }
 
