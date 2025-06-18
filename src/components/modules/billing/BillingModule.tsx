@@ -6,18 +6,15 @@ import DataTable from "../../shared/DataTable";
 import { Field, TableField } from "../../../Interfaces/TypesData";
 import { createStripePaymentIntent } from "./services/stripeService";
 import { StripeEmbeddedForm } from "./StripeEmbeddedForm";
-import { createInvoice } from "./services/invoiceService";
+import { createInvoice,getInvoicesByID,getInvoices} from "./services/invoiceService";
 import { getClients } from "../../../services/records/clientService";
-import { getCompanies } from "../../../auth/services/companyService";
 import { useInvoiceStore } from '../../../store/invoiceStore';
 import printJS from "print-js";
-import { getInvoices } from "./services/invoiceService";
 import axios from "axios";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { showToast } from "../../shared/Toast";
-
 // Definición de la constante API_URL
 const API_URL = import.meta.env.VITE_BASE_URL;
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -28,15 +25,13 @@ export function BillingModule() {
   const [showStripeForm, setShowStripeForm] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [clients, setClients] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loadingClients, setLoadingClients] = useState(false);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [createdInvoiceId, setCreatedInvoiceId] = useState<number|null>(null);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<number | null>(null);
   const [details, setDetails] = useState<any[]>([]);
   const [detailsTotal, setDetailsTotal] = useState(0);
   const [addingDetail, setAddingDetail] = useState(false);
   const [detailForm, setDetailForm] = useState<{ descripcion: string; cantidad: number; precio_unitario: number; id_lote?: number }>({ descripcion: '', cantidad: 1, precio_unitario: 0, id_lote: undefined });
+  const [loadingClients, setLoadingClients] = useState(false);
 
   const { invoices, setInvoices, fetchInvoices, addInvoice } = useInvoiceStore();
 
@@ -147,13 +142,6 @@ export function BillingModule() {
       options: loadingClients ? [{ value: "", label: "Cargando..." }] : clients.map((c: any) => ({ value: c.id, label: `${c.nombre} ${c.apellido}` }))
     },
     {
-      name: "id_empresa",
-      label: "Empresa",
-      type: "select",
-      required: true,
-      options: loadingCompanies ? [{ value: "", label: "Cargando..." }] : companies.map((e: any) => ({ value: e.id_empresa, label: e.nombre }))
-    },
-    {
       name: "status",
       label: "Estado",
       type: "select",
@@ -229,12 +217,13 @@ export function BillingModule() {
 
   // Nuevo handleSubmit: tras crear factura, mostrar modal de detalles
   const handleSubmit = async (data: any) => {
+    const idEmpresa = localStorage.getItem("empresa") || ""; // Asegurar que sea string
     const factura = {
       fecha_emision: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
       total: 0, // Se actualizará luego
       metodo_pago: data.metodo_pago,
       id_cliente: data.id_cliente,
-      id_empresa: data.id_empresa
+      id_empresa: idEmpresa
     };
     try {
       const facturaCreada = await createInvoice(factura);
@@ -310,17 +299,27 @@ export function BillingModule() {
   useEffect(() => {
     if (isModalOpen) {
       setLoadingClients(true);
-      setLoadingCompanies(true);
       getClients()
         .then((data: any[]) => setClients(data))
         .catch(() => setClients([]))
         .finally(() => setLoadingClients(false));
-      getCompanies()
-        .then((data: any[]) => setCompanies(data))
-        .catch(() => setCompanies([]))
-        .finally(() => setLoadingCompanies(false));
     }
   }, [isModalOpen]);
+
+  // Se asegura que los datos de la API se utilicen directamente
+  useEffect(() => {
+    setLoadingClients(true);
+    getClients()
+      .then((data) => {
+        setClients(data);
+      })
+      .catch((error) => {
+        console.error("Error al obtener los clientes:", error);
+      })
+      .finally(() => {
+        setLoadingClients(false);
+      });
+  }, []);
 
   const mockInvoices = [
     {
@@ -533,7 +532,7 @@ export async function createInvoiceDetail(data: any) {
   };
 
   try {
-    const response = await axios.post(`${API_URL}/invoice-details`, payload);
+    const response = await axios.post(`${API_URL}/detalle-factura`, payload);
     return response.data;
   } catch (error) {
     console.error("Error al crear detalles de factura:", error);
@@ -590,7 +589,3 @@ export default function BillingModuleWrapper() {
     </Elements>
   );
 }
-
-// Comentando los mocks
-// const mockInvoices = [...];
-// const mockInvoiceDetails = {...};

@@ -7,8 +7,8 @@ interface Invoice {
   fecha_emision: string;
   total: number;
   metodo_pago: string;
-  id_cliente: number;
-  id_empresa: number;
+  id_cliente: string;
+  id_empresa: string;
 }
 
 function getAuthHeaders() {
@@ -61,6 +61,15 @@ export async function deleteInvoice(invoiceId: string) {
   // Elimina una factura por su ID
   const response = await axios.delete(
     `${API_URL}/facturas/${invoiceId}`,
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+}
+
+export async function addInvoiceDetails(details: Array<{ descripcion: string; cantidad: number; precio_unitario: number; subtotal: number; id_factura: { id_factura: number }; id_lote?: { id_lote: number } }>) {
+  const response = await axios.post(
+    `${API_URL}/detalles-factura`,
+    details,
     { headers: getAuthHeaders() }
   );
   return response.data;
