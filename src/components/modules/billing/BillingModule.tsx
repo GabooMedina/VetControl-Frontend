@@ -6,17 +6,16 @@ import DataTable from "../../shared/DataTable";
 import { Field, TableField } from "../../../Interfaces/TypesData";
 import { createStripePaymentIntent } from "./services/stripeService";
 import { StripeEmbeddedForm } from "./StripeEmbeddedForm";
-import { createInvoice,getInvoicesByID,getInvoices} from "./services/invoiceService";
+import { createInvoice, getInvoicesByID, getInvoices, updateInvoice } from "./services/invoiceService";
 import { getClients } from "../../../services/records/clientService";
 import { useInvoiceStore } from '../../../store/invoiceStore';
 import printJS from "print-js";
-import axios from "axios";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { showToast } from "../../shared/Toast";
+import { createInvoiceDetail as createInvoiceDetailService } from './services/invoiceDetailsService';
 // Definición de la constante API_URL
-const API_URL = import.meta.env.VITE_BASE_URL;
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export function BillingModule() {
@@ -37,7 +36,11 @@ export function BillingModule() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [fetchInvoices]);
+  }, []);
+
+  useEffect(() => {
+    console.log("Facturas actualizadas:", invoices);
+  }, [invoices]);
 
   // Efecto para cargar las facturas de la empresa
   const idEmpresa = localStorage.getItem("empresa");
@@ -60,8 +63,8 @@ export function BillingModule() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-ES", { 
-      style: "currency", 
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
       currency: "USD",
       minimumFractionDigits: 2
     }).format(amount);
@@ -84,28 +87,33 @@ export function BillingModule() {
   };
 
   const tableFields: TableField[] = [
-    { 
-      name: "id_factura", 
+    {
+      name: "id_factura",
       label: "N° Factura"
     },
-    { 
-      name: "id_cliente", 
+    {
+      name: "cliente",
       label: "Cliente",
-      render: (value: any) => `${value.nombre} ${value.apellido}`
+      render: (cliente: any) => cliente ? `${cliente.nombre} ${cliente.apellido}` : "—"
     },
-    { 
-      name: "fecha_emision", 
+    {
+      name: "fecha_emision",
       label: "Fecha",
       render: (value: string) => formatDate(value)
     },
-    { 
-      name: "total", 
+    {
+      name: "total",
       label: "Total",
       render: (value: number) => formatCurrency(value)
     },
-    { 
-      name: "metodo_pago", 
+    {
+      name: "metodo_pago",
       label: "Método de Pago"
+    },
+    {
+      name: "estado",
+      label: "Estado",
+      render: (value: string) => value === "pagado" ? "Pagada" : value === "pendiente" ? "Pendiente" : "Anulada"
     }
   ];
 
@@ -115,13 +123,6 @@ export function BillingModule() {
       label: "Fecha",
       type: "date",
       required: true
-    },
-    {
-      name: "total",
-      label: "Total",
-      type: "number",
-      required: true,
-      placeholder: "0.00"
     },
     {
       name: "metodo_pago",
@@ -146,8 +147,9 @@ export function BillingModule() {
       label: "Estado",
       type: "select",
       options: [
-        { value: "Pagada", label: "Pagada" },
-        { value: "Pendiente", label: "Pendiente" }
+        { value: "pagado", label: "Pagada" },
+        { value: "pendiente", label: "Pendiente" },
+        { value: "anulado", label: "Anulada" }
       ],
       required: true
     }
@@ -166,36 +168,37 @@ export function BillingModule() {
     const details = invoice.detalles || [];
 
     const htmlContent = `
-      <div style="font-family: sans-serif; padding: 24px;">
-        <h2>Factura ${invoice.id_factura}</h2>
-        <p><strong>Cliente:</strong> ${invoice.id_cliente.nombre} ${invoice.id_cliente.apellido}</p>
-        <p><strong>Teléfono:</strong> ${invoice.id_cliente.telefono}</p>
-        <p><strong>Dirección:</strong> ${invoice.id_cliente.direccion}</p>
-        <p><strong>Fecha de Emisión:</strong> ${formatDate(invoice.fecha_emision)}</p>
-        <p><strong>Método de Pago:</strong> ${invoice.metodo_pago}</p>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr>
-              <th style="border: 1px solid #ccc; padding: 8px;">Descripción</th>
-              <th style="border: 1px solid #ccc; padding: 8px;">Cantidad</th>
-              <th style="border: 1px solid #ccc; padding: 8px;">Precio Unitario</th>
-              <th style="border: 1px solid #ccc; padding: 8px;">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${details.map((item: any) => `
-              <tr>
-                <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.precio_unitario)}</td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.subtotal)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <h3 style="text-align: right; margin-top: 20px;">Total: ${formatCurrency(invoice.total)}</h3>
-      </div>
-    `;
+  <div style="font-family: sans-serif; padding: 24px;">
+    <h2>Factura ${invoice.id_factura}</h2>
+    <p><strong>Cliente:</strong> ${invoice.cliente.nombre} ${invoice.cliente.apellido}</p>
+    <p><strong>Teléfono:</strong> ${invoice.cliente.telefono}</p>
+    <p><strong>Dirección:</strong> ${invoice.cliente.direccion}</p>
+    <p><strong>Fecha de Emisión:</strong> ${formatDate(invoice.fecha_emision)}</p>
+    <p><strong>Método de Pago:</strong> ${invoice.metodo_pago}</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid #ccc; padding: 8px;">Descripción</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Cantidad</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Precio Unitario</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${invoice.detalles.map((item: any) => `
+          <tr>
+            <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(parseFloat(item.precio_unitario))}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(parseFloat(item.subtotal))}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <h3 style="text-align: right; margin-top: 20px;">Total: ${formatCurrency(parseFloat(invoice.total))}</h3>
+  </div>
+`;
+
 
     printJS({
       printable: htmlContent,
@@ -207,6 +210,7 @@ export function BillingModule() {
       `
     });
   };
+
 
 
   // Calcular total de detalles
@@ -247,7 +251,7 @@ export function BillingModule() {
       cantidad: detailForm.cantidad,
       precio_unitario: detailForm.precio_unitario,
       subtotal,
-      id_factura: { id_factura: createdInvoiceId },
+      id_factura: createdInvoiceId,
       ...(detailForm.id_lote ? { id_lote: { id_lote: detailForm.id_lote } } : {})
     };
     try {
@@ -265,12 +269,17 @@ export function BillingModule() {
     if (!createdInvoiceId) return;
     // Actualizar total en la factura
     try {
-      await import('./services/invoiceService').then(mod => mod.updateInvoice(createdInvoiceId, { total: detailsTotal }));
+      await updateInvoice(createdInvoiceId, { total: detailsTotal });
     } catch (e) {
       // Toast error
     }
+    //ver factura actualizada
+    const updatedInvoice = await getInvoicesByID(createdInvoiceId.toString());
+    console.log("Factura actualizada:", updatedInvoice);
     setShowDetailsModal(false);
     setCreatedInvoiceId(null);
+    // recargar facturas y actualizar el store
+    await fetchInvoices();
     setDetails([]);
   };
 
@@ -312,6 +321,7 @@ export function BillingModule() {
     getClients()
       .then((data) => {
         setClients(data);
+        console.log("Clientes cargados:", data);
       })
       .catch((error) => {
         console.error("Error al obtener los clientes:", error);
@@ -320,71 +330,6 @@ export function BillingModule() {
         setLoadingClients(false);
       });
   }, []);
-
-  const mockInvoices = [
-    {
-      id_factura: 8,
-      fecha_emision: "2002-01-01",
-      total: 100,
-      metodo_pago: "Efectivo",
-      id_cliente: {
-        id_cliente: "636fe979-89b8-4d80-a22f-abe93bd2d15e",
-        nombre: "Carlos",
-        apellido: "Alvarado",
-        email: "carleto10@gmail.com",
-        telefono: "0984788455",
-        direccion: "Ambato"
-      },
-      detalles: [
-        {
-          id_detalle: "b66d27d8-e77b-42d8-bd6a-b21e89edf366",
-          descripcion: "Prueba1",
-          cantidad: 1,
-          precio_unitario: 50,
-          subtotal: 50
-        },
-        {
-          id_detalle: "226ff3f2-32a1-4ff2-af13-415e83e2a2ce",
-          descripcion: "Prueba 2",
-          cantidad: 1,
-          precio_unitario: 25,
-          subtotal: 25
-        },
-        {
-          id_detalle: "a91f7d40-5e69-4040-bd79-b6cf7401a958",
-          descripcion: "Prueba 3",
-          cantidad: 1,
-          precio_unitario: 25,
-          subtotal: 25
-        }
-      ],
-      estado: "Pendiente"
-    },
-    {
-      id_factura: 9,
-      fecha_emision: "2025-06-06",
-      total: 200,
-      metodo_pago: "Transferencia",
-      id_cliente: {
-        id_cliente: "12345678-1234-1234-1234-123456789012",
-        nombre: "Ana",
-        apellido: "Gómez",
-        email: "ana.gomez@example.com",
-        telefono: "0987654321",
-        direccion: "Quito"
-      },
-      detalles: [
-        {
-          id_detalle: "abcd1234-abcd-1234-abcd-1234567890ab",
-          descripcion: "Producto A",
-          cantidad: 2,
-          precio_unitario: 100,
-          subtotal: 200
-        }
-      ],
-      estado: "Pagada"
-    }
-  ];
 
   return (
     <div className="px-4 pt-1 pb-4">
@@ -397,20 +342,24 @@ export function BillingModule() {
 
       <DataTable
         fields={tableFields}
-        initialData={mockInvoices}
-        actions={mockInvoices.map(invoice => (
-          invoice.estado === "Pendiente" ? {
+        initialData={invoices}
+        actions={[
+          // mostrar boton de tarjeta de credito si la factura no esta pagada
+          
+          {
             icon: <CreditCard className="h-4 w-4" />,
-            onClick: () => handlePay(invoice),
-            tooltip: "Pagar factura"
-          } : {
+            onClick: (row: any) => handlePay(row),
+            tooltip: "Pagar factura",
+          },
+          {
             icon: <Printer className="h-4 w-4" />,
-            onClick: () => handlePrint(invoice),
+            onClick: (row: any) => handlePrint(row),
             tooltip: "Imprimir factura"
           }
-        ))}
+        ]}
         className="mt-1"
       />
+
 
       <CrudModal
         isOpen={isModalOpen}
@@ -527,13 +476,12 @@ export async function createInvoiceDetail(data: any) {
     cantidad: data.cantidad,
     precio_unitario: data.precio_unitario,
     subtotal: data.subtotal,
-    id_factura: { id_factura: data.id_factura },
+    id_factura: data.id_factura,
     id_lote: data.id_lote ? { id_lote: data.id_lote } : undefined // Lote es opcional
   };
 
   try {
-    const response = await axios.post(`${API_URL}/detalle-factura`, payload);
-    return response.data;
+    await createInvoiceDetailService(payload); // Llamada al servicio correcto
   } catch (error) {
     console.error("Error al crear detalles de factura:", error);
     throw error;

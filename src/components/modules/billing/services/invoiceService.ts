@@ -33,7 +33,6 @@ export async function getInvoices(idCompany: string) {
     { headers: getAuthHeaders() }
   );
   return response.data;
-  
 }
 
 export async function getInvoicesByID(invoiceId: string) {
@@ -49,12 +48,17 @@ export async function updateInvoice(
   invoiceId: number,
   invoice: Partial<Invoice>
 ) {
-  const response = await axios.patch(
-    `${API_URL}/facturas/${invoiceId}`,
-    invoice,
-    { headers: getAuthHeaders() }
-  );
-  return response.data;
+  try {
+    const response = await axios.patch(
+      `${API_URL}/facturas/${invoiceId}`,
+      invoice,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar la factura:", error);
+    throw error;
+  }
 }
 
 export async function deleteInvoice(invoiceId: string) {
