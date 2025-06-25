@@ -38,7 +38,7 @@ export const getInvoiceDetailsByInvoiceId = async (invoiceId: number) => {
 
 export const updateInvoiceDetail = async (detailId: number, detail: Partial<InvoiceDetail>) => {
   try {
-    const response = await axios.patch(`${API_URL}/detalle-factura/${detailId}`, detail, { headers: getAuthHeaders() });
+    const response = await axios.put(`${API_URL}/detalle-factura/${detailId}`, detail, { headers: getAuthHeaders() });
     return response.data;
   } catch (error) {
     console.error('Error al actualizar detalle de factura:', error);

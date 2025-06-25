@@ -4,129 +4,18 @@ import { CrudModal } from "../../shared/Modal";
 import { PrimaryButton } from "../../shared/PrimaryButton";
 import DataTable from "../../shared/DataTable";
 import { Field, TableField } from "../../../Interfaces/TypesData";
-import { loadStripe } from "@stripe/stripe-js";
 import { createStripePaymentIntent } from "./services/stripeService";
 import { StripeEmbeddedForm } from "./StripeEmbeddedForm";
-import { createInvoice } from "./services/invoiceService";
+import { createInvoice, getInvoicesByID, getInvoices, updateInvoice } from "./services/invoiceService";
 import { getClients } from "../../../services/records/clientService";
-import { getCompanies } from "../../../auth/services/companyService";
-import { createInvoiceDetail, InvoiceDetail } from "./services/invoiceDetailsService";
 import { useInvoiceStore } from '../../../store/invoiceStore';
 import printJS from "print-js";
-
-const mockInvoices = [
-  {
-    id: "INV-001",
-    client: "Juan Pérez",
-    date: "2023-10-10",
-    total: 66.98,
-    status: "Pagada",
-  },
-  {
-    id: "INV-002",
-    client: "María González",
-    date: "2023-10-12",
-    total: 25.0,
-    status: "Pendiente",
-  },
-  {
-    id: "INV-003",
-    client: "Carlos Rodríguez",
-    date: "2023-10-14",
-    total: 38.5,
-    status: "Pagada",
-  },
-  {
-    id: "INV-004",
-    client: "Ana Martínez",
-    date: "2023-10-15",
-    total: 35.0,
-    status: "Pendiente",
-  },
-  {
-    id: "INV-005",
-    client: "Luis Sánchez",
-    date: "2023-10-16",
-    total: 45.0,
-    status: "Pagada",
-  },
-  {
-    id: "INV-006",
-    client: "Lucía Fernández",
-    date: "2023-10-17",
-    total: 52.75,
-    status: "Pendiente",
-  },
-  {
-    id: "INV-007",
-    client: "Pedro Torres",
-    date: "2023-10-18",
-    total: 60.0,
-    status: "Pagada",
-  },
-  {
-    id: "INV-008",
-    client: "Sofía Ruiz",
-    date: "2023-10-19",
-    total: 29.99,
-    status: "Pagada",
-  },
-  {
-    id: "INV-009",
-    client: "Diego Castro",
-    date: "2023-10-20",
-    total: 41.25,
-    status: "Pendiente",
-  },
-  {
-    id: "INV-010",
-    client: "Valeria Navarro",
-    date: "2023-10-21",
-    total: 33.5,
-    status: "Pagada",
-  }  
-];
-
-// Mock de detalles para cada factura
-const mockInvoiceDetails: Record<string, any[]> = {
-  "INV-001": [
-    { descripcion: "Consulta general", cantidad: 1, precio_unitario: 30.00, subtotal: 30.00 },
-    { descripcion: "Vacuna antirrábica", cantidad: 2, precio_unitario: 18.49, subtotal: 36.98 },
-  ],
-  "INV-002": [
-    { descripcion: "Desparasitación", cantidad: 1, precio_unitario: 25.00, subtotal: 25.00 },
-  ],
-  "INV-003": [
-    { descripcion: "Radiografía", cantidad: 1, precio_unitario: 20.00, subtotal: 20.00 },
-    { descripcion: "Medicamento", cantidad: 1, precio_unitario: 18.50, subtotal: 18.50 },
-  ],
-  "INV-004": [
-    { descripcion: "Consulta", cantidad: 1, precio_unitario: 20.00, subtotal: 20.00 },
-    { descripcion: "Análisis de sangre", cantidad: 1, precio_unitario: 15.00, subtotal: 15.00 },
-  ],
-  "INV-005": [
-    { descripcion: "Vacuna triple", cantidad: 1, precio_unitario: 45.00, subtotal: 45.00 },
-  ],
-  "INV-006": [
-    { descripcion: "Consulta", cantidad: 1, precio_unitario: 30.00, subtotal: 30.00 },
-    { descripcion: "Desparasitación", cantidad: 1, precio_unitario: 22.75, subtotal: 22.75 },
-  ],
-  "INV-007": [
-    { descripcion: "Cirugía menor", cantidad: 1, precio_unitario: 60.00, subtotal: 60.00 },
-  ],
-  "INV-008": [
-    { descripcion: "Consulta", cantidad: 1, precio_unitario: 29.99, subtotal: 29.99 },
-  ],
-  "INV-009": [
-    { descripcion: "Vacuna", cantidad: 1, precio_unitario: 20.00, subtotal: 20.00 },
-    { descripcion: "Medicamento", cantidad: 1, precio_unitario: 21.25, subtotal: 21.25 },
-  ],
-  "INV-010": [
-    { descripcion: "Consulta", cantidad: 1, precio_unitario: 15.00, subtotal: 15.00 },
-    { descripcion: "Vacuna", cantidad: 1, precio_unitario: 18.50, subtotal: 18.50 },
-  ],
-};
-
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import { showToast } from "../../shared/Toast";
+import { createInvoiceDetail as createInvoiceDetailService } from './services/invoiceDetailsService';
+// Definición de la constante API_URL
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export function BillingModule() {
@@ -135,21 +24,38 @@ export function BillingModule() {
   const [showStripeForm, setShowStripeForm] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [clients, setClients] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loadingClients, setLoadingClients] = useState(false);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [createdInvoiceId, setCreatedInvoiceId] = useState<number|null>(null);
-  const [details, setDetails] = useState<InvoiceDetail[]>([]);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<number | null>(null);
+  const [details, setDetails] = useState<any[]>([]);
   const [detailsTotal, setDetailsTotal] = useState(0);
   const [addingDetail, setAddingDetail] = useState(false);
   const [detailForm, setDetailForm] = useState<{ descripcion: string; cantidad: number; precio_unitario: number; id_lote?: number }>({ descripcion: '', cantidad: 1, precio_unitario: 0, id_lote: undefined });
+  const [loadingClients, setLoadingClients] = useState(false);
 
   const { invoices, setInvoices, fetchInvoices, addInvoice } = useInvoiceStore();
 
   useEffect(() => {
     fetchInvoices();
-  }, [fetchInvoices]);
+  }, []);
+
+  useEffect(() => {
+    console.log("Facturas actualizadas:", invoices);
+  }, [invoices]);
+
+  // Efecto para cargar las facturas de la empresa
+  const idEmpresa = localStorage.getItem("empresa");
+
+  useEffect(() => {
+    if (idEmpresa) {
+      getInvoices(idEmpresa)
+        .then((data: any[]) => {
+          setInvoices(data);
+        })
+        .catch((error: any) => {
+          console.error("Error al obtener las facturas de la empresa:", error);
+        });
+    }
+  }, [idEmpresa]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -157,8 +63,8 @@ export function BillingModule() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-ES", { 
-      style: "currency", 
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
       currency: "USD",
       minimumFractionDigits: 2
     }).format(amount);
@@ -181,50 +87,33 @@ export function BillingModule() {
   };
 
   const tableFields: TableField[] = [
-    { 
-      name: "id", 
+    {
+      name: "id_factura",
       label: "N° Factura"
     },
-    { 
-      name: "client", 
-      label: "Cliente"
+    {
+      name: "cliente",
+      label: "Cliente",
+      render: (cliente: any) => cliente ? `${cliente.nombre} ${cliente.apellido}` : "—"
     },
-    { 
-      name: "date", 
+    {
+      name: "fecha_emision",
       label: "Fecha",
       render: (value: string) => formatDate(value)
     },
-    { 
-      name: "total", 
+    {
+      name: "total",
       label: "Total",
       render: (value: number) => formatCurrency(value)
     },
-    { 
-      name: "status", 
-      label: "Estado",
-      render: (value: string) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          value === "Pagada" ? "bg-green-100 text-green-800" :
-          value === "Pendiente" ? "bg-yellow-100 text-yellow-800" :
-          "bg-gray-100 text-gray-800"
-        }`}>
-          {value}
-        </span>
-      )
+    {
+      name: "metodo_pago",
+      label: "Método de Pago"
     },
     {
-      name: "pay",
-      label: "Pago",
-      render: (_: any, row: any) =>
-        row.status === "Pendiente" ? (
-          <button
-            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-            onClick={() => handlePay(row)}
-            title="Pagar con Stripe"
-          >
-            <CreditCard className="w-4 h-4" /> Pagar
-          </button>
-        ) : null
+      name: "estado",
+      label: "Estado",
+      render: (value: string) => value === "pagado" ? "Pagada" : value === "pendiente" ? "Pendiente" : "Anulada"
     }
   ];
 
@@ -234,13 +123,6 @@ export function BillingModule() {
       label: "Fecha",
       type: "date",
       required: true
-    },
-    {
-      name: "total",
-      label: "Total",
-      type: "number",
-      required: true,
-      placeholder: "0.00"
     },
     {
       name: "metodo_pago",
@@ -261,19 +143,13 @@ export function BillingModule() {
       options: loadingClients ? [{ value: "", label: "Cargando..." }] : clients.map((c: any) => ({ value: c.id, label: `${c.nombre} ${c.apellido}` }))
     },
     {
-      name: "id_empresa",
-      label: "Empresa",
-      type: "select",
-      required: true,
-      options: loadingCompanies ? [{ value: "", label: "Cargando..." }] : companies.map((e: any) => ({ value: e.id_empresa, label: e.nombre }))
-    },
-    {
       name: "status",
       label: "Estado",
       type: "select",
       options: [
-        { value: "Pagada", label: "Pagada" },
-        { value: "Pendiente", label: "Pendiente" }
+        { value: "pagado", label: "Pagada" },
+        { value: "pendiente", label: "Pendiente" },
+        { value: "anulado", label: "Anulada" }
       ],
       required: true
     }
@@ -284,59 +160,57 @@ export function BillingModule() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (invoice: any) => {
-    setCurrentInvoice(invoice);
-    setIsModalOpen(true);
-  };
-
   const handleDelete = (id: number) => {
     setInvoices(invoices.filter(invoice => invoice.id_factura !== id));
   };
 
   const handlePrint = (invoice: any) => {
-  const details = mockInvoiceDetails[invoice.id] || [];
+    const details = invoice.detalles || [];
 
-  // Construir HTML para impresión
-  const htmlContent = `
-    <div style="font-family: sans-serif; padding: 24px;">
-      <h2>Factura ${invoice.id}</h2>
-      <p><strong>Cliente:</strong> ${invoice.client}</p>
-      <p><strong>Fecha:</strong> ${formatDate(invoice.date)}</p>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
+    const htmlContent = `
+  <div style="font-family: sans-serif; padding: 24px;">
+    <h2>Factura ${invoice.id_factura}</h2>
+    <p><strong>Cliente:</strong> ${invoice.cliente.nombre} ${invoice.cliente.apellido}</p>
+    <p><strong>Teléfono:</strong> ${invoice.cliente.telefono}</p>
+    <p><strong>Dirección:</strong> ${invoice.cliente.direccion}</p>
+    <p><strong>Fecha de Emisión:</strong> ${formatDate(invoice.fecha_emision)}</p>
+    <p><strong>Método de Pago:</strong> ${invoice.metodo_pago}</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid #ccc; padding: 8px;">Descripción</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Cantidad</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Precio Unitario</th>
+          <th style="border: 1px solid #ccc; padding: 8px;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${invoice.detalles.map((item: any) => `
           <tr>
-            <th style="border: 1px solid #ccc; padding: 8px;">Descripción</th>
-            <th style="border: 1px solid #ccc; padding: 8px;">Cantidad</th>
-            <th style="border: 1px solid #ccc; padding: 8px;">Precio Unitario</th>
-            <th style="border: 1px solid #ccc; padding: 8px;">Subtotal</th>
+            <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(parseFloat(item.precio_unitario))}</td>
+            <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(parseFloat(item.subtotal))}</td>
           </tr>
-        </thead>
-        <tbody>
-          ${details.map(item => `
-            <tr>
-              <td style="border: 1px solid #ccc; padding: 8px;">${item.descripcion}</td>
-              <td style="border: 1px solid #ccc; padding: 8px;">${item.cantidad}</td>
-              <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.precio_unitario)}</td>
-              <td style="border: 1px solid #ccc; padding: 8px;">${formatCurrency(item.subtotal)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <h3 style="text-align: right; margin-top: 20px;">Total: ${formatCurrency(invoice.total)}</h3>
-    </div>
-  `;
+        `).join('')}
+      </tbody>
+    </table>
+    <h3 style="text-align: right; margin-top: 20px;">Total: ${formatCurrency(parseFloat(invoice.total))}</h3>
+  </div>
+`;
 
-  // Usar print-js para imprimir directamente el contenido HTML
-  printJS({
-    printable: htmlContent,
-    type: 'raw-html',
-    style: `
-      body { font-family: sans-serif; }
-      h2, h3 { margin: 0; padding: 0; }
-      table { border: 1px solid #ccc; }
-    `
-  });
-};
+
+    printJS({
+      printable: htmlContent,
+      type: 'raw-html',
+      style: `
+        body { font-family: sans-serif; }
+        h2, h3 { margin: 0; padding: 0; }
+        table { border: 1px solid #ccc; }
+      `
+    });
+  };
+
 
 
   // Calcular total de detalles
@@ -347,12 +221,13 @@ export function BillingModule() {
 
   // Nuevo handleSubmit: tras crear factura, mostrar modal de detalles
   const handleSubmit = async (data: any) => {
+    const idEmpresa = localStorage.getItem("empresa") || ""; // Asegurar que sea string
     const factura = {
       fecha_emision: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
       total: 0, // Se actualizará luego
       metodo_pago: data.metodo_pago,
       id_cliente: data.id_cliente,
-      id_empresa: data.id_empresa
+      id_empresa: idEmpresa
     };
     try {
       const facturaCreada = await createInvoice(factura);
@@ -371,12 +246,12 @@ export function BillingModule() {
     if (!createdInvoiceId) return;
     setAddingDetail(true);
     const subtotal = detailForm.cantidad * detailForm.precio_unitario;
-    const detail: InvoiceDetail = {
+    const detail: any = {
       descripcion: detailForm.descripcion,
       cantidad: detailForm.cantidad,
       precio_unitario: detailForm.precio_unitario,
       subtotal,
-      id_factura: { id_factura: createdInvoiceId },
+      id_factura: createdInvoiceId,
       ...(detailForm.id_lote ? { id_lote: { id_lote: detailForm.id_lote } } : {})
     };
     try {
@@ -394,12 +269,17 @@ export function BillingModule() {
     if (!createdInvoiceId) return;
     // Actualizar total en la factura
     try {
-      await import('./services/invoiceService').then(mod => mod.updateInvoice(createdInvoiceId, { total: detailsTotal }));
+      await updateInvoice(createdInvoiceId, { total: detailsTotal });
     } catch (e) {
       // Toast error
     }
+    //ver factura actualizada
+    const updatedInvoice = await getInvoicesByID(createdInvoiceId.toString());
+    console.log("Factura actualizada:", updatedInvoice);
     setShowDetailsModal(false);
     setCreatedInvoiceId(null);
+    // recargar facturas y actualizar el store
+    await fetchInvoices();
     setDetails([]);
   };
 
@@ -428,17 +308,28 @@ export function BillingModule() {
   useEffect(() => {
     if (isModalOpen) {
       setLoadingClients(true);
-      setLoadingCompanies(true);
       getClients()
         .then((data: any[]) => setClients(data))
         .catch(() => setClients([]))
         .finally(() => setLoadingClients(false));
-      getCompanies()
-        .then((data: any[]) => setCompanies(data))
-        .catch(() => setCompanies([]))
-        .finally(() => setLoadingCompanies(false));
     }
   }, [isModalOpen]);
+
+  // Se asegura que los datos de la API se utilicen directamente
+  useEffect(() => {
+    setLoadingClients(true);
+    getClients()
+      .then((data) => {
+        setClients(data);
+        console.log("Clientes cargados:", data);
+      })
+      .catch((error) => {
+        console.error("Error al obtener los clientes:", error);
+      })
+      .finally(() => {
+        setLoadingClients(false);
+      });
+  }, []);
 
   return (
     <div className="px-4 pt-1 pb-4">
@@ -451,16 +342,24 @@ export function BillingModule() {
 
       <DataTable
         fields={tableFields}
-        initialData={mockInvoices} // Usar mockInvoices en vez de invoices
+        initialData={invoices}
         actions={[
+          // mostrar boton de tarjeta de credito si la factura no esta pagada
+          
+          {
+            icon: <CreditCard className="h-4 w-4" />,
+            onClick: (row: any) => handlePay(row),
+            tooltip: "Pagar factura",
+          },
           {
             icon: <Printer className="h-4 w-4" />,
-            onClick: handlePrint,
+            onClick: (row: any) => handlePrint(row),
             tooltip: "Imprimir factura"
           }
         ]}
         className="mt-1"
       />
+
 
       <CrudModal
         isOpen={isModalOpen}
@@ -500,39 +399,34 @@ export function BillingModule() {
             <h2 className="text-xl font-bold mb-4 text-gray-900">Agregar Detalles a la Factura</h2>
             <div className="mb-4">
               <input
-                className="border rounded px-2 py-1 mr-2"
+                className="border rounded px-2 py-1 mr-2 w-full"
                 placeholder="Descripción"
                 value={detailForm.descripcion}
                 onChange={e => setDetailForm(f => ({ ...f, descripcion: e.target.value }))}
               />
-              <input
-                type="number"
-                className="border rounded px-2 py-1 mr-2 w-20"
-                placeholder="Cantidad"
-                min={1}
-                value={detailForm.cantidad}
-                onChange={e => setDetailForm(f => ({ ...f, cantidad: Number(e.target.value) }))}
-              />
-              <input
-                type="number"
-                className="border rounded px-2 py-1 mr-2 w-24"
-                placeholder="Precio unitario"
-                min={0}
-                value={detailForm.precio_unitario}
-                onChange={e => setDetailForm(f => ({ ...f, precio_unitario: Number(e.target.value) }))}
-              />
-              <input
-                type="number"
-                className="border rounded px-2 py-1 mr-2 w-24"
-                placeholder="ID Lote (opcional)"
-                value={detailForm.id_lote || ''}
-                onChange={e => setDetailForm(f => ({ ...f, id_lote: e.target.value ? Number(e.target.value) : undefined }))}
-              />
-              <button
-                className="bg-teal-600 text-white px-3 py-1 rounded disabled:opacity-50"
-                onClick={handleAddDetail}
-                disabled={addingDetail || !detailForm.descripcion || !detailForm.cantidad || !detailForm.precio_unitario}
-              >Agregar</button>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  className="border rounded px-2 py-1 w-1/3"
+                  placeholder="Cantidad"
+                  min={1}
+                  value={detailForm.cantidad}
+                  onChange={e => setDetailForm(f => ({ ...f, cantidad: Number(e.target.value) }))}
+                />
+                <input
+                  type="number"
+                  className="border rounded px-2 py-1 w-1/3"
+                  placeholder="Precio unitario"
+                  min={0}
+                  value={detailForm.precio_unitario}
+                  onChange={e => setDetailForm(f => ({ ...f, precio_unitario: Number(e.target.value) }))}
+                />
+                <button
+                  className="bg-teal-600 text-white px-3 py-1 rounded disabled:opacity-50 w-1/3"
+                  onClick={handleAddDetail}
+                  disabled={addingDetail || !detailForm.descripcion || !detailForm.cantidad || !detailForm.precio_unitario}
+                >Agregar</button>
+              </div>
             </div>
             <div className="mb-4">
               <table className="w-full text-sm border">
@@ -572,5 +466,74 @@ export function BillingModule() {
         </div>
       )}
     </div>
+  );
+}
+
+// Función para crear detalles de factura
+export async function createInvoiceDetail(data: any) {
+  const payload = {
+    descripcion: data.descripcion,
+    cantidad: data.cantidad,
+    precio_unitario: data.precio_unitario,
+    subtotal: data.subtotal,
+    id_factura: data.id_factura,
+    id_lote: data.id_lote ? { id_lote: data.id_lote } : undefined // Lote es opcional
+  };
+
+  try {
+    await createInvoiceDetailService(payload); // Llamada al servicio correcto
+  } catch (error) {
+    console.error("Error al crear detalles de factura:", error);
+    throw error;
+  }
+}
+
+function PaymentForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      showToast.error("Stripe no está cargado correctamente.");
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      showToast.error("CardElement no está disponible.");
+      return;
+    }
+
+    const { error } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+    });
+
+    if (error) {
+      showToast.error("Error al crear el método de pago: " + error.message);
+    } else {
+      showToast.success("Método de pago creado exitosamente.");
+      // Aquí puedes enviar el `paymentMethod` al backend para procesar el pago
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <CardElement options={{ style: { base: { fontSize: "16px" } } }} />
+      <button type="submit" disabled={!stripe}>
+        Pagar
+      </button>
+    </form>
+  );
+}
+
+export default function BillingModuleWrapper() {
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm />
+    </Elements>
   );
 }

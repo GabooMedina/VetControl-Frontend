@@ -2,10 +2,11 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoVetControl from '../assets/VetControl.png';
 import MetaDescription from '../components/shared/MetaDescription';
-import { login } from './services/authService';
 import { showToast } from '../components/shared/Toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
+import {  login ,getAuthenticatedUser } from './services/authService';
+import { getUserById } from './services/userService';
+import { Company } from '../Interfaces/Company';
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,18 +20,28 @@ const SignIn = () => {
       return;
     }
     try {
-      // Aquí irá la lógica de autenticación del backend
-      // console.log('Iniciando sesión con:', { email, password });
       const response = await login(email, password);
       if (response) {
         console.log('Inicio de sesión exitoso:', response);
-        localStorage.setItem("token", response.access_token); // Asegúrate de guardar el token correctamente
+        localStorage.setItem("token", response.access_token);
         showToast.success('Inicio de sesión exitoso');
+
+        // Obtener el usuario autenticado para conseguir su userId
+        const authenticatedUser = await getAuthenticatedUser();
+        if (authenticatedUser?.userId) {
+          // Usar el userId para obtener el usuario completo y guardar id_empresa
+          const user = await getUserById(authenticatedUser.userId);
+          if (user?.id_empresa) {
+            const empresa: Company= user.id_empresa
+            console.log('Empresa del usuario:', empresa.id_empresa.toString());
+            localStorage.setItem("empresa", empresa.id_empresa);
+          }
+        }
+
         navigate('/dashboard');
       }
     } catch {
       showToast.error('Error al iniciar sesión. Verifique sus credenciales.');
-      
     }
   }, [email, password, navigate]);
 
