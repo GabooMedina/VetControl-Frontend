@@ -59,21 +59,20 @@ ofreciendo una solución completa para la administración eficiente del servicio
 
 ## 🗂 Estructura del Proyecto
 
+```
 src/
-├── assets/ # Recursos estáticos (imágenes, iconos)
-├── auth/ # Autenticación y autorización
-├── components/ # Componentes reutilizables
-│ └── modules/ # Módulos principales del sistema
-│ ├── appointments/ # Gestión de citas
-│ ├── billing/ # Facturación electrónica
-│ ├── clients/ # Gestión de clientes
-│ ├── inventory/ # Gestión de inventario/productos
-│ ├── pets/ # Gestión de mascotas
-│ ├── reports/ # Reportes
-│ └── users/ # Gestión de usuarios
-
-
----
+├── assets/            # Recursos estáticos (imágenes, iconos)
+├── auth/              # Autenticación y autorización
+├── components/        # Componentes reutilizables
+│   └── modules/       # Módulos principales del sistema
+│       ├── appointments/  # Gestión de citas
+│       ├── billing/       # Facturación electrónica
+│       ├── clients/       # Gestión de clientes
+│       ├── inventory/     # Gestión de inventario/productos
+│       ├── pets/          # Gestión de mascotas
+│       ├── reports/       # Reportes
+│       └── users/         # Gestión de usuarios
+```
 
 ## ⚙️ Instalación y Ejecución
 
